@@ -1,21 +1,311 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useListServices, useCreateService } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Cpu, ArrowRight, Activity, Plus } from "lucide-react";
+import {
+  Search, Cpu, ArrowRight, Activity, Plus,
+  ChevronDown, Server, Layers, Zap,
+} from "lucide-react";
 import { formatAddress } from "@/lib/utils";
 import { useWallet } from "@/hooks/use-wallet";
 import { useLang } from "@/lib/i18n";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 
+/* ─── Types ─────────────────────────────────────────────────────── */
+type StatusFilter = "all" | "active" | "inactive";
+
+/* ─── Sub-components ────────────────────────────────────────────── */
+
+function ComingSoonBadge() {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border border-zinc-700/60 text-zinc-600 bg-zinc-900/60 select-none">
+      Coming soon
+    </span>
+  );
+}
+
+function FilterSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { label: string; value: string }[];
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none pl-3 pr-8 py-2 rounded-xl border border-[#1E293B] bg-[#06070A]/70 text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-[#F3BA2F]/40 cursor-pointer"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value} className="bg-[#0A0F1A]">
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
+    </div>
+  );
+}
+
+/* ─── Empty state ────────────────────────────────────────────────── */
+function EmptyState({ isFiltered, t }: { isFiltered: boolean; t: (k: any) => string }) {
+  if (isFiltered) {
+    return (
+      <div className="py-20 text-center rounded-2xl border border-[#1E293B] bg-[#06070A]/40">
+        <Search className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+        <h3 className="text-base font-semibold text-zinc-400 mb-2">{t("market_no_agents")}</h3>
+        <p className="text-sm text-zinc-600">{t("market_no_agents_desc")}</p>
+      </div>
+    );
+  }
+
+  const steps = [
+    { num: "01", icon: Layers,  title: "Connect Wallet",        desc: "Link your BSC wallet to identify as an agent or provider." },
+    { num: "02", icon: Server,  title: "Prepare Your Endpoint", desc: "Have your API endpoint URL and metadata ready for submission." },
+    { num: "03", icon: Plus,    title: "List Your Service",      desc: "Submit your service to the registry via the List Service form." },
+    { num: "04", icon: Zap,     title: "Earn Per Call",          desc: "Agents call your service and you receive payment per request." },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div className="py-14 text-center rounded-2xl border border-[#1E293B] bg-[#06070A]/60">
+        <div className="w-14 h-14 rounded-2xl border border-[#1E293B] bg-[#0A0F1A] flex items-center justify-center mx-auto mb-5">
+          <Cpu className="w-7 h-7 text-zinc-600" />
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2">No services listed yet</h3>
+        <p className="text-sm text-zinc-500 max-w-sm mx-auto">
+          Be among the first providers to register an AI service on AgentFuel.
+        </p>
+      </div>
+
+      <div>
+        <p className="text-xs text-zinc-600 uppercase tracking-widest mb-4">How it works</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {steps.map(({ num, icon: Icon, title, desc }) => (
+            <div key={num} className="rounded-xl border border-[#1E293B] bg-[#06070A]/40 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-mono text-[10px] text-zinc-600">{num}</span>
+                <Icon className="w-4 h-4 text-zinc-600" />
+              </div>
+              <p className="text-sm font-semibold text-zinc-300 mb-1">{title}</p>
+              <p className="text-xs text-zinc-600 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Service Card ───────────────────────────────────────────────── */
+function ServiceCard({ service, idx, t }: { service: any; idx: number; t: (k: any) => string }) {
+  const isActive = service.active === true;
+
+  /* successRate: stored as basis points (10000 = 100.00%).
+     Only meaningful when there have been actual calls. */
+  const successRateDisplay =
+    service.totalCalls === 0
+      ? "--"
+      : `${(service.successRate / 100).toFixed(1)}%`;
+
+  /* avgLatency: 0 means not yet measured */
+  const latencyDisplay =
+    service.avgLatency === 0 ? "--" : `${service.avgLatency}ms`;
+
+  /* stakeRequired: "0" means no stake set; trim trailing decimal zeros */
+  const stakeDisplay =
+    !service.stakeRequired || service.stakeRequired === "0"
+      ? "--"
+      : `${parseFloat(service.stakeRequired)} FUEL`;
+
+  return (
+    <motion.div
+      key={service.id}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25, delay: idx * 0.04 }}
+      className="group relative flex flex-col rounded-2xl border border-[#1E293B] bg-[#06070A]/70 hover:border-[#F3BA2F]/20 transition-all duration-300 overflow-hidden"
+    >
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#F3BA2F]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+      <div className="p-5 flex flex-col flex-1">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl border border-[#1E293B] bg-[#0A0F1A] flex items-center justify-center shrink-0">
+            <Cpu className="w-4.5 h-4.5 text-[#F3BA2F]" />
+          </div>
+          {isActive ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-green-500/20 bg-green-500/8 text-[10px] text-green-400 font-medium shrink-0">
+              <span className="w-1 h-1 rounded-full bg-green-400" />
+              {t("market_active")}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-zinc-700/40 bg-zinc-900/40 text-[10px] text-zinc-500 font-medium shrink-0">
+              <span className="w-1 h-1 rounded-full bg-zinc-600" />
+              Inactive
+            </span>
+          )}
+        </div>
+
+        {/* Name + Description */}
+        <h3 className="text-base font-bold text-white mb-1.5 group-hover:text-[#F3BA2F] transition-colors line-clamp-1">
+          {service.name}
+        </h3>
+        <p className="text-xs text-zinc-500 line-clamp-2 mb-4 leading-relaxed flex-1">
+          {service.description}
+        </p>
+
+        {/* Endpoint — plain text, no external link */}
+        <div className="mb-4 px-3 py-2 rounded-lg border border-[#1E293B] bg-black/20 flex items-center gap-2">
+          <Server className="w-3 h-3 text-zinc-600 shrink-0" />
+          <span
+            className="font-mono text-[10px] text-zinc-500 truncate"
+            title={service.endpoint}
+          >
+            {service.endpoint}
+          </span>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <StatCell label={t("market_price_per_call")} value={String(parseFloat(service.price))} unit={service.currency} />
+          <StatCell label="Stake Required" value={stakeDisplay} />
+          <StatCell label={t("market_success_rate")} value={successRateDisplay} />
+          <StatCell label="Total Calls" value={String(service.totalCalls)} />
+        </div>
+
+        {/* Provider row */}
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg border border-[#1E293B] bg-black/20 mb-4">
+          <span className="text-[10px] text-zinc-600">{t("market_provider")}</span>
+          <span className="font-mono text-[10px] text-zinc-400">
+            {formatAddress(service.ownerAddress)}
+          </span>
+        </div>
+
+        {/* CTA */}
+        <Link
+          href={`/playground?serviceId=${service.id}`}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#1E293B] bg-white/3 text-xs font-semibold text-zinc-300 hover:bg-[#F3BA2F] hover:text-[#06070A] hover:border-transparent transition-all"
+        >
+          {t("market_get_quote")} <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+function StatCell({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <div>
+      <p className="text-[10px] text-zinc-600 mb-0.5">{label}</p>
+      <p className="text-sm font-semibold text-zinc-200">
+        {value}
+        {unit && value !== "--" && (
+          <span className="text-[10px] text-zinc-600 font-normal ml-1">{unit}</span>
+        )}
+      </p>
+    </div>
+  );
+}
+
+/* ─── List Service Modal ─────────────────────────────────────────── */
+function ListServiceModal({
+  isOpen,
+  onOpenChange,
+  onSubmit,
+  isPending,
+  t,
+}: {
+  isOpen: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  isPending: boolean;
+  t: (k: any) => string;
+}) {
+  const { t: tRaw, lang } = useLang();
+  const notice =
+    lang === "zh"
+      ? "当前已支持服务上架，链上结算流程仍在完善中。"
+      : "Service listing is available now. Onchain settlement is being refined.";
+
+  const inputClass =
+    "w-full px-4 py-3 bg-[#06070A] border border-[#1E293B] rounded-xl text-white text-sm focus:ring-1 focus:ring-[#F3BA2F]/40 focus:border-[#F3BA2F]/40 outline-none transition-all placeholder:text-zinc-600";
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] bg-[#0A0F1A] border-[#1E293B]">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-white">
+            {t("market_modal_title")}
+          </DialogTitle>
+          <p className="text-xs text-zinc-500 mt-1">{notice}</p>
+        </DialogHeader>
+
+        <form onSubmit={onSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-zinc-500">{t("market_service_name")}</label>
+            <input required name="name" className={inputClass} placeholder={t("market_service_name_ph")} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-zinc-500">{t("market_description")}</label>
+            <textarea
+              required name="description"
+              className={`${inputClass} min-h-[90px] resize-none`}
+              placeholder={t("market_description_ph")}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-zinc-500">{t("market_endpoint")}</label>
+            <input required name="endpoint" className={inputClass} placeholder={t("market_endpoint_ph")} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">{t("market_price")}</label>
+              <input required name="price" type="number" step="0.0001" min="0" className={inputClass} placeholder="0.05" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">{t("market_stake")}</label>
+              <input required name="stakeRequired" type="number" min="0" className={inputClass} placeholder="1000" />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full mt-2 px-6 py-3 bg-[#F3BA2F] text-[#06070A] font-bold text-sm rounded-xl hover:bg-[#F3BA2F]/90 disabled:opacity-50 transition-all"
+          >
+            {isPending ? t("market_submitting") : t("market_submit")}
+          </button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── Main page ──────────────────────────────────────────────────── */
 export default function Market() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm]     = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [tokenFilter, setTokenFilter]   = useState("all");
+  const [isModalOpen, setIsModalOpen]   = useState(false);
+
   const { data: services, isLoading } = useListServices();
   const { address } = useWallet();
   const { t } = useLang();
   const queryClient = useQueryClient();
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const createMutation = useCreateService({
     mutation: {
@@ -26,199 +316,177 @@ export default function Market() {
     },
   });
 
-  const filteredServices =
-    services?.filter(
-      (s) =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.description.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
-
   const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     createMutation.mutate({
       data: {
         ownerAddress: address || "0x0000000000000000000000000000000000000000",
-        name: fd.get("name") as string,
-        description: fd.get("description") as string,
-        endpoint: fd.get("endpoint") as string,
-        price: fd.get("price") as string,
-        currency: "USDT",
+        name:         fd.get("name")          as string,
+        description:  fd.get("description")   as string,
+        endpoint:     fd.get("endpoint")      as string,
+        price:        fd.get("price")         as string,
+        currency:     "USDT",
         stakeRequired: fd.get("stakeRequired") as string,
       },
     });
   };
 
+  /* Dynamic token list built from real data */
+  const tokenOptions = useMemo(() => {
+    const unique = [...new Set(services?.map((s) => s.currency).filter(Boolean))];
+    return [
+      { label: "All Tokens", value: "all" },
+      ...unique.map((c) => ({ label: c, value: c })),
+    ];
+  }, [services]);
+
+  /* Filtering — all based on real fields */
+  const filteredServices = useMemo(() => {
+    return (services ?? []).filter((s) => {
+      const matchSearch =
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus =
+        statusFilter === "all"
+          ? true
+          : statusFilter === "active"
+          ? s.active === true
+          : s.active === false;
+      const matchToken =
+        tokenFilter === "all" ? true : s.currency === tokenFilter;
+      return matchSearch && matchStatus && matchToken;
+    });
+  }, [services, searchTerm, statusFilter, tokenFilter]);
+
+  const isFiltered = searchTerm !== "" || statusFilter !== "all" || tokenFilter !== "all";
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+      {/* ── Page header ─────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-3">{t("market_title")}</h1>
-          <p className="text-zinc-400 max-w-2xl text-lg">{t("market_desc")}</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-1">
+            {t("market_title")}
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Discover agent-powered services, APIs and MCP endpoints on BSC.
+          </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder={t("market_search")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-64 pl-12 pr-4 py-3 bg-secondary/50 border border-border rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-            />
-          </div>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Explore Pricing — not yet implemented */}
+          <button
+            disabled
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#1E293B] bg-white/2 text-sm text-zinc-600 cursor-not-allowed"
+            title="Pricing tiers are not yet available"
+          >
+            Explore Pricing
+            <ComingSoonBadge />
+          </button>
 
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white font-medium transition-all">
-                <Plus className="w-5 h-5" />
-                {t("market_list_service")}
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-card border-border">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-white">
-                  {t("market_modal_title")}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleCreateSubmit} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-400">{t("market_service_name")}</label>
-                  <input
-                    required
-                    name="name"
-                    className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                    placeholder={t("market_service_name_ph")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-400">{t("market_description")}</label>
-                  <textarea
-                    required
-                    name="description"
-                    className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:ring-2 focus:ring-primary/50 outline-none min-h-[100px]"
-                    placeholder={t("market_description_ph")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-400">{t("market_endpoint")}</label>
-                  <input
-                    required
-                    name="endpoint"
-                    className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                    placeholder={t("market_endpoint_ph")}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-400">{t("market_price")}</label>
-                    <input
-                      required
-                      name="price"
-                      type="number"
-                      step="0.0001"
-                      className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                      placeholder="0.05"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-400">{t("market_stake")}</label>
-                    <input
-                      required
-                      name="stakeRequired"
-                      type="number"
-                      className="w-full px-4 py-3 bg-background border border-border rounded-xl text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                      placeholder="1000"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="w-full mt-6 px-6 py-4 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 disabled:opacity-50 transition-all"
-                >
-                  {createMutation.isPending ? t("market_submitting") : t("market_submit")}
-                </button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          {/* List Service — functional (calls real API) */}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#F3BA2F]/30 bg-[#F3BA2F]/8 text-sm text-[#F3BA2F] hover:bg-[#F3BA2F]/15 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {t("market_list_service")}
+          </button>
         </div>
       </div>
 
+      {/* ── Search + Filter bar ──────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
+          <input
+            type="text"
+            placeholder={t("market_search")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#1E293B] bg-[#06070A]/70 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#F3BA2F]/40 transition-all"
+          />
+        </div>
+
+        {/* Status filter — based on service.active (real field) */}
+        <FilterSelect
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v as StatusFilter)}
+          options={[
+            { label: "All Status", value: "all" },
+            { label: "Active",     value: "active" },
+            { label: "Inactive",   value: "inactive" },
+          ]}
+        />
+
+        {/* Token filter — dynamically built from real data */}
+        <FilterSelect
+          value={tokenFilter}
+          onChange={setTokenFilter}
+          options={tokenOptions}
+        />
+
+        {/* Result count */}
+        {!isLoading && services != null && (
+          <span className="text-xs text-zinc-600 ml-auto shrink-0">
+            {filteredServices.length} / {services.length} services
+          </span>
+        )}
+      </div>
+
+      {/* ── Service list ─────────────────────────────────────────── */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-72 rounded-2xl bg-secondary/30 animate-pulse border border-white/5" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-72 rounded-2xl border border-[#1E293B] bg-[#06070A]/40 animate-pulse"
+            />
           ))}
         </div>
       ) : filteredServices.length === 0 ? (
-        <div className="py-24 text-center glass-panel rounded-3xl border-dashed">
-          <Cpu className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">{t("market_no_agents")}</h3>
-          <p className="text-zinc-500">{t("market_no_agents_desc")}</p>
-        </div>
+        <EmptyState isFiltered={isFiltered} t={t} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <AnimatePresence>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <AnimatePresence mode="popLayout">
             {filteredServices.map((service, idx) => (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: idx * 0.05 }}
-                className="group relative flex flex-col glass-panel rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 overflow-hidden"
-              >
-                {/* Status Indicator */}
-                <div className="absolute top-6 right-6 flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-xs font-medium text-green-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    {t("market_active")}
-                  </div>
-                </div>
-
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 mb-5">
-                  <Cpu className="w-6 h-6 text-primary" />
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
-                  {service.name}
-                </h3>
-                <p className="text-sm text-zinc-400 line-clamp-2 mb-6 flex-1">{service.description}</p>
-
-                <div className="grid grid-cols-2 gap-4 mb-6 pt-6 border-t border-white/5">
-                  <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-1">{t("market_price_per_call")}</p>
-                    <p className="text-lg font-semibold text-white flex items-baseline gap-1">
-                      {service.price}{" "}
-                      <span className="text-xs text-zinc-500 font-normal">{service.currency}</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-zinc-500 mb-1">{t("market_success_rate")}</p>
-                    <p className="text-lg font-semibold text-white flex items-center gap-1">
-                      <Activity className="w-4 h-4 text-green-400" />
-                      {service.successRate}%
-                    </p>
-                  </div>
-                  <div className="col-span-2 flex items-center justify-between bg-black/20 rounded-lg p-3 border border-white/5">
-                    <span className="text-xs text-zinc-500">{t("market_provider")}</span>
-                    <span className="text-xs font-mono text-zinc-300">{formatAddress(service.ownerAddress)}</span>
-                  </div>
-                </div>
-
-                <Link
-                  href={`/playground?serviceId=${service.id}`}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-primary hover:text-primary-foreground border border-white/10 hover:border-transparent font-semibold transition-all"
-                >
-                  {t("market_get_quote")} <ArrowRight className="w-4 h-4" />
-                </Link>
-              </motion.div>
+              <ServiceCard key={service.id} service={service} idx={idx} t={t} />
             ))}
           </AnimatePresence>
         </div>
       )}
+
+      {/* ── Bottom CTA ───────────────────────────────────────────── */}
+      {!isLoading && (
+        <div className="rounded-2xl border border-[#1E293B] bg-[#06070A]/50 p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 className="text-base font-bold text-white mb-1">
+              Ready to list your service?
+            </h3>
+            <p className="text-sm text-zinc-500">
+              Register your AI agent endpoint and start earning per API call.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#F3BA2F] text-[#06070A] font-bold text-sm hover:bg-[#F3BA2F]/90 transition-colors shrink-0"
+          >
+            {t("market_list_service")} <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── List Service Modal ───────────────────────────────────── */}
+      <ListServiceModal
+        isOpen={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSubmit={handleCreateSubmit}
+        isPending={createMutation.isPending}
+        t={t}
+      />
     </div>
   );
 }
