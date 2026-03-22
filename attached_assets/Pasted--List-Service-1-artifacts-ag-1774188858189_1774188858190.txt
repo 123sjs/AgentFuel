@@ -1,0 +1,80 @@
+先检查相关文件：
+
+调查完毕。以下是详细分析与计划，不改代码，等你确认。
+
+当前 List Service 弹窗调查报告
+1. 相关代码在哪些文件
+全部在同一文件 artifacts/agentfuel/src/pages/Market.tsx：
+
+ListServiceModal 组件：第 222–296 行（弹窗 UI）
+handleCreateSubmit：第 319–333 行（提交逻辑）
+createMutation：第 310–317 行（React Query mutation）
+2. 当前表单字段
+字段名	控件类型	是否真实提交	备注
+name	text input	✅	必填
+description	textarea	✅	必填
+endpoint	text input	✅	必填
+price	number input	✅	必填，step=0.0001
+stakeRequired	number input	✅	必填，min=0
+currency	无输入框	✅	硬编码 "USDT"，用户完全不可见
+ownerAddress	自动填充	✅	取自钱包地址，用户不可见
+3. 哪些字段真实提交到 API
+全部 7 个字段都真实提交： ownerAddress, name, description, endpoint, price, currency="USDT", stakeRequired
+
+4. 哪些默认值、占位文案或交互最容易误导
+问题	具体位置
+currency 静默锁定为 "USDT"	用户不知道，无任何提示
+stakeRequired 标签无说明	用户不知道这目前只是显示字段，无链上执行
+Endpoint 无格式说明	不知道应该填 https URL 还是什么格式
+提交成功后直接关闭弹窗	用户不知道提交是否成功
+createMutation.error 完全不展示	提交失败时页面无任何反馈
+5. 当前最影响专业感的 5 个问题
+currency 字段完全不透明：硬编码 USDT 但用户毫不知情，表单看起来像少了一个字段
+没有 success / error 反馈：成功后弹窗直接消失，失败后什么都不显示，体验断裂
+字段完全无说明文字：每个字段标签后面没有任何 hint，Endpoint 是什么格式？Stake 填 FUEL 还是数量？
+stakeRequired 语义不清晰：当前 Stake 填入后只是注册表字段，没有任何链上质押逻辑，但表单毫无说明
+弹窗整体太像临时 demo：无分组，无状态层级，提交按钮只是一个按钮，整体与 Services 页面品牌不一致
+改代码前计划
+1. 会修改哪些文件
+只修改 artifacts/agentfuel/src/pages/Market.tsx，只动 ListServiceModal 函数和 handleCreateSubmit 逻辑，一个文件。
+
+2. 哪些旧逻辑会保留
+保留项	理由
+useCreateService() + queryClient.invalidateQueries()	真实 API 逻辑
+ownerAddress 自动从钱包取	真实
+currency: "USDT" 硬编码提交	真实当前实现
+所有 5 个用户填写字段	真实表单
+Dialog 组件（已有依赖）	不新增依赖
+3. 哪些表单区块会重做
+区块	操作
+字段分组	新增两个分区：Basic Info / Pricing & Network，用分隔线和小标题区隔
+Endpoint 字段	新增 hint 文字：HTTPS URL of your agent's callable API endpoint
+Price 字段	新增 hint：Amount charged per API call
+Currency 显示	新增只读展示框显示 USDT，旁边灰色注释：Default payment token — more tokens coming
+Stake Required 字段	新增 hint：FUEL amount displayed as listing requirement — onchain stake enforcement is being integrated
+顶部 notice	保留现有语义边界说明，升级样式（加左边框+图标，视觉更清晰）
+提交按钮	文案改为 Submit Listing，pending 时显示 Submitting…
+success 状态	提交成功后在弹窗内显示绿色确认区块："Service listing submitted. Your service is now visible in the registry."，2 秒后自动关闭或手动关闭
+error 状态	提交失败后在提交按钮上方显示红色内联错误，不弹 alert
+4. 哪些数据显示真实值，哪些只做说明
+数据项	处理
+name/description/endpoint/price/stakeRequired	真实用户输入，真实提交
+currency = "USDT"	真实值，以只读方式展示 + 说明
+Stake 链上执行	只展示字段，明确标注 "onchain enforcement is being integrated"
+成功提示	"visible in the registry" — 只说注册成功，不说链上部署
+5. 如何避免把"上架"误导成"已上链/已结算"
+顶部 notice 明确：Service listing creates a registry entry. Onchain settlement and automatic FUEL staking are being integrated.
+提交按钮文案为 Submit Listing，不用 "Deploy"、"Launch"、"Activate Onchain"
+成功提示为：Your service is now visible in the registry.（不说"已上链"、"支付已开通"）
+Stake 字段 hint 明确：display field — onchain enforcement is being integrated
+Currency 说明：Default payment token — 只说这是支付 token 名称，不暗示支付已接通
+6. 完成后验收标准
+验收项	通过条件
+Currency 可见	弹窗显示 USDT 只读字段，旁边有 "more tokens coming" 注释
+字段有说明	Endpoint/Price/Stake 至少各有一行 hint 文字
+提交成功有反馈	成功后弹窗内显示绿色确认区块，不直接消失
+提交失败有内联错误	失败后在表单内显示错误信息，无 alert
+不暗示链上已接通	弹窗内无"链上部署"、"支付已开通"等表述
+Stake 语义清晰	Stake 字段旁有 hint 说明当前为展示字段
+视觉分组清晰	Basic Info / Pricing & Network 两个分区有明显分隔
+等你确认，立刻开始改代码。
