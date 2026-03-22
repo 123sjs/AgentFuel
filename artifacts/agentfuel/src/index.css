@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --font-sans: 'Manrope', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+:root {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --border: 240 10% 12%;
+  --input: 240 10% 12%;
+  --ring: 42 90% 57%;
+
+  --card: 240 10% 6%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 240 10% 12%;
+
+  --popover: 240 10% 6%;
+  --popover-foreground: 0 0% 98%;
+  --popover-border: 240 10% 12%;
+
+  /* BSC Gold */
+  --primary: 42 90% 57%;
+  --primary-foreground: 240 10% 4%;
+
+  --secondary: 240 10% 12%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 240 10% 12%;
+  --muted-foreground: 240 5% 65%;
+
+  --accent: 240 10% 16%;
+  --accent-foreground: 0 0% 98%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --radius: 0.75rem;
+
+  /* AgentFuel brand tokens */
+  --af-gold: #F3BA2F;
+  --af-blue: #3B82F6;
+  --af-dark-1: #06070A;
+  --af-dark-2: #0A0F1A;
+  --af-border: #1E293B;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/30 selection:text-primary-foreground min-h-screen;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight font-semibold;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-card/60 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60;
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-amber-200;
+  }
+
+  /* Hex grid background — used as a background-image layer */
+  .af-hex-bg {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52' viewBox='0 0 60 52'%3E%3Cpath d='M30 1 L59 16 L59 36 L30 51 L1 36 L1 16 Z' fill='none' stroke='%23F3BA2F' stroke-width='0.6'/%3E%3C/svg%3E");
+    background-size: 60px 52px;
+    background-repeat: repeat;
+  }
+}
+
+/* ═══════════════════════════════════════
+   AgentFuel brand animation classes
+═══════════════════════════════════════ */
+
+.af-hex-drift    { animation: af-hex-drift 30s linear infinite; will-change: transform; }
+.af-energy-gold  { animation: af-energy-gold 14s linear infinite; will-change: transform; }
+.af-energy-blue  { animation: af-energy-blue 20s linear infinite; will-change: transform; }
+.af-scan         { animation: af-scan 7s ease-in-out infinite; will-change: transform; }
+.af-breathe      { animation: af-breathe 2.5s ease-in-out infinite; will-change: transform; }
+.af-cta-glow     { animation: af-cta-glow 9s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════
+   Keyframe definitions
+═══════════════════════════════════════ */
+
+/* Hex grid slow drift (tiles at 52px Y — seamless repeat) */
+@keyframes af-hex-drift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(0, 52px); }
+}
+
+/* Gold energy line: sweeps left → right */
+@keyframes af-energy-gold {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* Blue energy line: sweeps right → left */
+@keyframes af-energy-blue {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(-100%); }
+}
+
+/* Panel scan line: appears and sweeps across once per cycle */
+@keyframes af-scan {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* Status dot soft pulse */
+@keyframes af-breathe {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.5); opacity: 0.5; }
+}
+
+/* CTA background glow breathe */
+@keyframes af-cta-glow {
+  0%, 100% { opacity: 0.04; }
+  50%       { opacity: 0.09; }
+}
+
+/* ═══════════════════════════════════════
+   prefers-reduced-motion: disable all AF animations
+═══════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .af-hex-drift,
+  .af-energy-gold,
+  .af-energy-blue,
+  .af-scan,
+  .af-breathe,
+  .af-cta-glow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: reduce background intensity
+   (opacity controlled via .af-energy-wrap / .af-hex-wrap wrapper classes)
+═══════════════════════════════════════ */
+@media (max-width: 767px) {
+  .af-energy-wrap { opacity: 0.04 !important; }
+  .af-hex-wrap    { opacity: 0.02 !important; }
+}

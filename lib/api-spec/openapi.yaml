@@ -1,0 +1,394 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: AgentFuel API - BSC Agent Payment Layer
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: services
+    description: Service market operations
+  - name: providers
+    description: Provider operations
+  - name: quotes
+    description: Quote operations
+  - name: receipts
+    description: Receipt operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List all services
+      description: Returns all registered agent/API/MCP services
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Register a new service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceInput"
+      responses:
+        "201":
+          description: Created service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/{id}:
+    get:
+      operationId: getService
+      tags: [services]
+      summary: Get service by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /providers:
+    get:
+      operationId: listProviders
+      tags: [providers]
+      summary: List all providers
+      responses:
+        "200":
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Provider"
+    post:
+      operationId: createProvider
+      tags: [providers]
+      summary: Register a provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProviderInput"
+      responses:
+        "201":
+          description: Created provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Provider"
+
+  /providers/{address}:
+    get:
+      operationId: getProvider
+      tags: [providers]
+      summary: Get provider by wallet address
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Provider details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Provider"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /quote:
+    post:
+      operationId: requestQuote
+      tags: [quotes]
+      summary: Request a quote for a service call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteInput"
+      responses:
+        "200":
+          description: Quote result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteResult"
+
+  /receipts:
+    get:
+      operationId: listReceipts
+      tags: [receipts]
+      summary: List call receipts
+      parameters:
+        - name: payer
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: serviceId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of receipts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Receipt"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerAddress:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        price:
+          type: string
+        currency:
+          type: string
+        stakeRequired:
+          type: string
+        successRate:
+          type: number
+        avgLatency:
+          type: integer
+        totalCalls:
+          type: integer
+        active:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - ownerAddress
+        - name
+        - description
+        - endpoint
+        - price
+        - currency
+        - stakeRequired
+        - successRate
+        - avgLatency
+        - totalCalls
+        - active
+        - createdAt
+
+    CreateServiceInput:
+      type: object
+      properties:
+        ownerAddress:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        price:
+          type: string
+        currency:
+          type: string
+        stakeRequired:
+          type: string
+      required:
+        - ownerAddress
+        - name
+        - description
+        - endpoint
+        - price
+        - currency
+        - stakeRequired
+
+    Provider:
+      type: object
+      properties:
+        id:
+          type: integer
+        address:
+          type: string
+        stakedFuel:
+          type: string
+        reputationScore:
+          type: integer
+        slashCount:
+          type: integer
+        totalEarnings:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - address
+        - stakedFuel
+        - reputationScore
+        - slashCount
+        - totalEarnings
+        - createdAt
+
+    CreateProviderInput:
+      type: object
+      properties:
+        address:
+          type: string
+      required:
+        - address
+
+    QuoteInput:
+      type: object
+      properties:
+        serviceId:
+          type: string
+        input:
+          type: object
+      required:
+        - serviceId
+
+    QuoteResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        serviceId:
+          type: string
+        price:
+          type: string
+        token:
+          type: string
+        stakeRequired:
+          type: string
+        paymentHeader:
+          type: string
+      required:
+        - ok
+        - serviceId
+        - price
+        - token
+        - stakeRequired
+        - paymentHeader
+
+    Receipt:
+      type: object
+      properties:
+        id:
+          type: integer
+        serviceId:
+          type: integer
+        payer:
+          type: string
+        provider:
+          type: string
+        token:
+          type: string
+        amount:
+          type: string
+        txHash:
+          type: string
+          nullable: true
+        requestHash:
+          type: string
+          nullable: true
+        responseHash:
+          type: string
+          nullable: true
+        success:
+          type: boolean
+        latencyMs:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - serviceId
+        - payer
+        - provider
+        - token
+        - amount
+        - success
+        - latencyMs
+        - createdAt
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

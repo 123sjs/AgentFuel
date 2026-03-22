@@ -1,0 +1,16 @@
+packages:
+  "framer-motion": "For premium page transitions, stagger animations, and micro-interactions"
+  "recharts": "For rendering beautiful provider dashboard analytics charts"
+  "@hookform/resolvers": "For robust Zod schema validation in forms"
+  "react-hook-form": "For complex form state management"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to efficiently merge Tailwind CSS classes"
+
+images:
+  - path: "artifacts/agentfuel/public/images/hero-bg.png"
+    description: "Abstract 3D network nodes glowing in deep space, thin connecting lines, subtle gold and electric blue accents, representing an AI blockchain network, dark, minimal, and premium aesthetic"
+    aspect_ratio: "16:9"
+
+notes:
+  - Uses the generated TanStack Query hooks from @workspace/api-client-react for all API interactions.
+  - Dark mode professional aesthetic is hardcoded as default to match Web3/BSC crypto vibe.

@@ -1,0 +1,716 @@
+set -e
+
+corepack enable || true
+
+# 1) 在当前 Replit App 根目录下生成真正项目代码到 /agentfuel
+pnpm dlx create-next-app@latest agentfuel \
+  --ts \
+  --tailwind \
+  --eslint \
+  --app \
+  --src-dir \
+  --use-pnpm \
+  --import-alias "@/*" \
+  --yes
+
+cd agentfuel
+
+# 2) 安装运行依赖
+pnpm add viem wagmi @tanstack/react-query zod drizzle-orm pg dotenv lucide-react clsx tailwind-merge @openzeppelin/contracts
+
+# 3) 安装开发依赖
+pnpm add -D drizzle-kit hardhat @nomicfoundation/hardhat-toolbox tsx
+
+# 4) 给 package.json 增加脚本
+node <<'NODE'
+const fs = require('fs');
+const path = 'package.json';
+const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+pkg.scripts = {
+  ...pkg.scripts,
+  "db:generate": "drizzle-kit generate",
+  "db:push": "drizzle-kit push",
+  "db:studio": "drizzle-kit studio",
+  "chain:compile": "hardhat compile",
+  "chain:deploy:testnet": "hardhat run scripts/deploy.ts --network bscTestnet",
+  "chain:deploy:mainnet": "hardhat run scripts/deploy.ts --network bscMainnet"
+};
+fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
+NODE
+
+# 5) 创建目录
+mkdir -p src/app/dashboard
+mkdir -p src/app/playground
+mkdir -p src/app/api/health
+mkdir -p src/app/api/quote
+mkdir -p src/app/api/services
+mkdir -p src/db
+mkdir -p contracts
+mkdir -p scripts
+
+# 6) 首页
+cat > src/app/page.tsx <<'EOF'
+import Link from "next/link";
+
+const cards = [
+  {
+    title: "Service Market",
+    desc: "浏览可付费调用的 agent / API / MCP 服务。",
+    href: "/api/services",
+  },
+  {
+    title: "Provider Dashboard",
+    desc: "服务方查看质押、收入、信誉、调用统计。",
+    href: "/dashboard",
+  },
+  {
+    title: "Playground",
+    desc: "输入参数，模拟按次付费调用。",
+    href: "/playground",
+  },
+];
+
+export default function HomePage() {
+  return (
+    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+      <div className="mx-auto max-w-6xl px-6 py-16">
+        <div className="mb-10">
+          <p className="mb-3 inline-block rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-300">
+            AgentFuel · BSC Agent Payment Layer
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            给 AI Agent / API / MCP 服务做按次收费、质押与信誉层
+          </h1>
+          <p className="mt-4 max-w-3xl text-zinc-400">
+            首版目标：服务注册、按次支付、FUEL 质押、调用收据。
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {cards.map((card) => (
+            <Link
+              key={card.title}
+              href={card.href}
+              className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-zinc-700 hover:bg-zinc-800"
+            >
+              <div className="text-lg font-medium">{card.title}</div>
+              <p className="mt-2 text-sm text-zinc-400">{card.desc}</p>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-10 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <div className="text-lg font-medium">当前 MVP 结构</div>
+          <ul className="mt-4 space-y-2 text-sm text-zinc-400">
+            <li>• Web + API：Next.js Route Handlers</li>
+            <li>• DB：Replit SQL Database + Drizzle</li>
+            <li>• Chain：Hardhat + Solidity + BSC Testnet</li>
+            <li>• Token：FUEL 作为质押 / 惩罚 / 路由权重资产</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  );
+}
+EOF
+
+# 7) Dashboard
+cat > src/app/dashboard/page.tsx <<'EOF'
+export default function DashboardPage() {
+  return (
+    <main className="min-h-screen bg-zinc-950 px-6 py-16 text-zinc-100">
+      <div className="mx-auto max-w-5xl">
+        <h1 className="text-3xl font-semibold">Provider Dashboard</h1>
+        <p className="mt-3 text-zinc-400">
+          这里后面接：服务注册、FUEL 质押、服务收益、信誉分、调用记录。
+        </p>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          {[
+            ["Staked FUEL", "--"],
+            ["Reputation", "--"],
+            ["Total Calls", "--"],
+            ["Revenue", "--"],
+          ].map(([k, v]) => (
+            <div key={k} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="text-sm text-zinc-400">{k}</div>
+              <div className="mt-2 text-2xl font-semibold">{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+EOF
+
+# 8) Playground
+cat > src/app/playground/page.tsx <<'EOF'
+"use client";
+
+import { useState } from "react";
+
+type QuoteResult = {
+  ok: boolean;
+  serviceId: string;
+  price: string;
+  token: string;
+  stakeRequired: string;
+  paymentHeader: string;
+};
+
+export default function PlaygroundPage() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<QuoteResult | null>(null);
+
+  async function runQuote() {
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const res = await fetch("/api/quote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serviceId: "summarize-agent",
+          input: {
+            text: "hello agentfuel",
+          },
+        }),
+      });
+
+      const data = await res.json();
+      setResult(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-zinc-950 px-6 py-16 text-zinc-100">
+      <div className="mx-auto max-w-4xl">
+        <h1 className="text-3xl font-semibold">Playground</h1>
+        <p className="mt-3 text-zinc-400">
+          这里先跑 mock quote，后面接真实支付 header、签名和链上收据。
+        </p>
+
+        <button
+          onClick={runQuote}
+          disabled={loading}
+          className="mt-6 rounded-xl bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+        >
+          {loading ? "处理中..." : "请求报价"}
+        </button>
+
+        <pre className="mt-6 overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-300">
+{JSON.stringify(result, null, 2)}
+        </pre>
+      </div>
+    </main>
+  );
+}
+EOF
+
+# 9) API - health
+cat > src/app/api/health/route.ts <<'EOF'
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    app: "agentfuel",
+    deployment: process.env.REPLIT_DEPLOYMENT ? "deployment" : "workspace",
+    now: new Date().toISOString(),
+  });
+}
+EOF
+
+# 10) API - services
+cat > src/app/api/services/route.ts <<'EOF'
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json([
+    {
+      id: "summarize-agent",
+      name: "Summarize Agent",
+      description: "对文本做总结，按次收费。",
+      price: "0.10",
+      token: "USDT",
+      stakeRequired: "1000 FUEL",
+      successRate: "99.2%",
+      avgLatency: "820ms",
+    },
+    {
+      id: "research-agent",
+      name: "Research Agent",
+      description: "做快速 research，按次收费。",
+      price: "0.25",
+      token: "USDT",
+      stakeRequired: "2500 FUEL",
+      successRate: "97.6%",
+      avgLatency: "2100ms",
+    },
+  ]);
+}
+EOF
+
+# 11) API - quote
+cat > src/app/api/quote/route.ts <<'EOF'
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const serviceId = body?.serviceId ?? "unknown";
+
+  return NextResponse.json({
+    ok: true,
+    serviceId,
+    price: "0.10",
+    token: "USDT",
+    stakeRequired: "1000 FUEL",
+    paymentHeader: "X-PAYMENT",
+  });
+}
+EOF
+
+# 12) DB schema
+cat > src/db/schema.ts <<'EOF'
+import {
+  pgTable,
+  serial,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  numeric,
+} from "drizzle-orm/pg-core";
+
+export const providers = pgTable("providers", {
+  id: serial("id").primaryKey(),
+  address: text("address").notNull().unique(),
+  stakedFuel: numeric("staked_fuel", { precision: 30, scale: 8 }).notNull().default("0"),
+  reputationScore: integer("reputation_score").notNull().default(0),
+  slashCount: integer("slash_count").notNull().default(0),
+  totalEarnings: numeric("total_earnings", { precision: 30, scale: 8 }).notNull().default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  ownerAddress: text("owner_address").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  endpoint: text("endpoint").notNull(),
+  price: numeric("price", { precision: 30, scale: 8 }).notNull(),
+  currency: text("currency").notNull(),
+  stakeRequired: numeric("stake_required", { precision: 30, scale: 8 }).notNull().default("0"),
+  successRate: integer("success_rate").notNull().default(10000),
+  avgLatency: integer("avg_latency").notNull().default(0),
+  totalCalls: integer("total_calls").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const receipts = pgTable("receipts", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  payer: text("payer").notNull(),
+  provider: text("provider").notNull(),
+  token: text("token").notNull(),
+  amount: numeric("amount", { precision: 30, scale: 8 }).notNull(),
+  txHash: text("tx_hash"),
+  requestHash: text("request_hash"),
+  responseHash: text("response_hash"),
+  success: boolean("success").notNull().default(true),
+  latencyMs: integer("latency_ms").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+EOF
+
+# 13) DB client
+cat > src/db/index.ts <<'EOF'
+import "dotenv/config";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import * as schema from "./schema";
+
+const url = process.env.DATABASE_URL;
+
+export const db = url
+  ? drizzle({
+      client: new Pool({ connectionString: url }),
+      schema,
+    })
+  : null;
+EOF
+
+# 14) drizzle config
+cat > drizzle.config.ts <<'EOF'
+import "dotenv/config";
+import type { Config } from "drizzle-kit";
+
+export default {
+  schema: "./src/db/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL || "postgres://placeholder:placeholder@localhost:5432/placeholder",
+  },
+} satisfies Config;
+EOF
+
+# 15) Hardhat config
+cat > hardhat.config.ts <<'EOF'
+import "@nomicfoundation/hardhat-toolbox";
+import "dotenv/config";
+import type { HardhatUserConfig } from "hardhat/config";
+
+const config: HardhatUserConfig = {
+  solidity: "0.8.24",
+  networks: {
+    bscTestnet: {
+      url: process.env.BSC_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 97,
+    },
+    bscMainnet: {
+      url: process.env.BSC_RPC_URL || "",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 56,
+    },
+  },
+};
+
+export default config;
+EOF
+
+# 16) FuelToken.sol
+cat > contracts/FuelToken.sol <<'EOF'
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract FuelToken is ERC20, Ownable {
+    constructor(address initialOwner, uint256 initialSupply)
+        ERC20("AgentFuel", "FUEL")
+        Ownable(initialOwner)
+    {
+        _mint(initialOwner, initialSupply);
+    }
+
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+}
+EOF
+
+# 17) FuelStaking.sol
+cat > contracts/FuelStaking.sol <<'EOF'
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract FuelStaking is Ownable {
+    IERC20 public immutable fuel;
+    mapping(address => uint256) public stakes;
+
+    event Staked(address indexed user, uint256 amount);
+    event Unstaked(address indexed user, uint256 amount);
+    event Slashed(address indexed user, uint256 amount);
+
+    constructor(address fuelToken, address initialOwner) Ownable(initialOwner) {
+        fuel = IERC20(fuelToken);
+    }
+
+    function stake(uint256 amount) external {
+        require(amount > 0, "amount=0");
+        require(fuel.transferFrom(msg.sender, address(this), amount), "transfer failed");
+        stakes[msg.sender] += amount;
+        emit Staked(msg.sender, amount);
+    }
+
+    function unstake(uint256 amount) external {
+        require(amount > 0, "amount=0");
+        require(stakes[msg.sender] >= amount, "insufficient stake");
+        stakes[msg.sender] -= amount;
+        require(fuel.transfer(msg.sender, amount), "transfer failed");
+        emit Unstaked(msg.sender, amount);
+    }
+
+    function slash(address user, uint256 amount) external onlyOwner {
+        require(stakes[user] >= amount, "insufficient stake");
+        stakes[user] -= amount;
+        emit Slashed(user, amount);
+    }
+}
+EOF
+
+# 18) ServiceRegistry.sol
+cat > contracts/ServiceRegistry.sol <<'EOF'
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ServiceRegistry is Ownable {
+    struct Service {
+        uint256 id;
+        address owner;
+        string name;
+        string endpoint;
+        string metadataURI;
+        address paymentToken;
+        uint256 price;
+        uint256 stakeRequired;
+        bool active;
+    }
+
+    uint256 public totalServices;
+    mapping(uint256 => Service) public services;
+
+    event ServiceCreated(uint256 indexed id, address indexed owner, string name);
+    event ServiceUpdated(uint256 indexed id);
+    event ServiceStatusChanged(uint256 indexed id, bool active);
+
+    constructor(address initialOwner) Ownable(initialOwner) {}
+
+    function createService(
+        string calldata name,
+        string calldata endpoint,
+        string calldata metadataURI,
+        address paymentToken,
+        uint256 price,
+        uint256 stakeRequired
+    ) external returns (uint256) {
+        totalServices += 1;
+        services[totalServices] = Service({
+            id: totalServices,
+            owner: msg.sender,
+            name: name,
+            endpoint: endpoint,
+            metadataURI: metadataURI,
+            paymentToken: paymentToken,
+            price: price,
+            stakeRequired: stakeRequired,
+            active: true
+        });
+
+        emit ServiceCreated(totalServices, msg.sender, name);
+        return totalServices;
+    }
+
+    function updateService(
+        uint256 id,
+        string calldata endpoint,
+        string calldata metadataURI,
+        address paymentToken,
+        uint256 price,
+        uint256 stakeRequired
+    ) external {
+        Service storage s = services[id];
+        require(s.owner == msg.sender, "not owner");
+
+        s.endpoint = endpoint;
+        s.metadataURI = metadataURI;
+        s.paymentToken = paymentToken;
+        s.price = price;
+        s.stakeRequired = stakeRequired;
+
+        emit ServiceUpdated(id);
+    }
+
+    function setActive(uint256 id, bool active) external {
+        Service storage s = services[id];
+        require(s.owner == msg.sender, "not owner");
+        s.active = active;
+        emit ServiceStatusChanged(id, active);
+    }
+}
+EOF
+
+# 19) ReceiptRegistry.sol
+cat > contracts/ReceiptRegistry.sol <<'EOF'
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ReceiptRegistry is Ownable {
+    struct Receipt {
+        uint256 id;
+        uint256 serviceId;
+        address payer;
+        address provider;
+        address paymentToken;
+        uint256 amount;
+        bytes32 requestHash;
+        bytes32 responseHash;
+        uint256 latencyMs;
+        bool success;
+        uint256 timestamp;
+    }
+
+    uint256 public totalReceipts;
+    mapping(uint256 => Receipt) public receipts;
+    mapping(address => bool) public recorders;
+
+    event RecorderUpdated(address indexed recorder, bool allowed);
+    event ReceiptRecorded(uint256 indexed id, uint256 indexed serviceId, address indexed payer);
+
+    constructor(address initialOwner) Ownable(initialOwner) {}
+
+    modifier onlyRecorder() {
+        require(recorders[msg.sender], "not recorder");
+        _;
+    }
+
+    function setRecorder(address recorder, bool allowed) external onlyOwner {
+        recorders[recorder] = allowed;
+        emit RecorderUpdated(recorder, allowed);
+    }
+
+    function recordReceipt(
+        uint256 serviceId,
+        address payer,
+        address provider,
+        address paymentToken,
+        uint256 amount,
+        bytes32 requestHash,
+        bytes32 responseHash,
+        uint256 latencyMs,
+        bool success
+    ) external onlyRecorder returns (uint256) {
+        totalReceipts += 1;
+
+        receipts[totalReceipts] = Receipt({
+            id: totalReceipts,
+            serviceId: serviceId,
+            payer: payer,
+            provider: provider,
+            paymentToken: paymentToken,
+            amount: amount,
+            requestHash: requestHash,
+            responseHash: responseHash,
+            latencyMs: latencyMs,
+            success: success,
+            timestamp: block.timestamp
+        });
+
+        emit ReceiptRecorded(totalReceipts, serviceId, payer);
+        return totalReceipts;
+    }
+}
+EOF
+
+# 20) deploy.ts
+cat > scripts/deploy.ts <<'EOF'
+import { ethers } from "hardhat";
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  console.log("Deployer:", deployer.address);
+
+  const FuelToken = await ethers.getContractFactory("FuelToken");
+  const fuelToken = await FuelToken.deploy(
+    deployer.address,
+    ethers.parseUnits("1000000000", 18)
+  );
+  await fuelToken.waitForDeployment();
+
+  const FuelStaking = await ethers.getContractFactory("FuelStaking");
+  const fuelStaking = await FuelStaking.deploy(
+    await fuelToken.getAddress(),
+    deployer.address
+  );
+  await fuelStaking.waitForDeployment();
+
+  const ServiceRegistry = await ethers.getContractFactory("ServiceRegistry");
+  const serviceRegistry = await ServiceRegistry.deploy(deployer.address);
+  await serviceRegistry.waitForDeployment();
+
+  const ReceiptRegistry = await ethers.getContractFactory("ReceiptRegistry");
+  const receiptRegistry = await ReceiptRegistry.deploy(deployer.address);
+  await receiptRegistry.waitForDeployment();
+
+  console.log("FuelToken:", await fuelToken.getAddress());
+  console.log("FuelStaking:", await fuelStaking.getAddress());
+  console.log("ServiceRegistry:", await serviceRegistry.getAddress());
+  console.log("ReceiptRegistry:", await receiptRegistry.getAddress());
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
+EOF
+
+# 21) 环境变量样例
+cat > .env.example <<'EOF'
+DATABASE_URL=
+BSC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
+PRIVATE_KEY=
+
+NEXT_PUBLIC_CHAIN_ID=97
+NEXT_PUBLIC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
+EOF
+
+# 22) 根目录 .replit，用于 Run 按钮
+cd ..
+cat > .replit <<'EOF'
+run = "cd agentfuel && pnpm dev"
+EOF
+
+# 23) 根目录 replit.md，让 Replit Agent 按这套架构工作
+cat > replit.md <<'EOF'
+# AgentFuel on Replit
+
+## Project root
+- Main app lives in `/agentfuel`
+- Replit root only stores `.replit` and this `replit.md`
+
+## Product
+- Build AgentFuel: BSC-native pay-per-call commerce layer for AI agents
+- MVP = service registry + FUEL staking + quote API + receipt registry
+
+## Tech rules
+- Use TypeScript everywhere
+- Use Next.js App Router and Route Handlers
+- Keep one public server only for MVP
+- Do NOT split into a second public gateway process on Replit
+- Use Replit SQL Database through `DATABASE_URL` only
+- Do not use PGHOST / PGUSER / PGPASSWORD in new code
+- Chain target is BSC Testnet first, then BSC Mainnet
+- Contracts are in `/agentfuel/contracts`
+- Hardhat config is in `/agentfuel/hardhat.config.ts`
+
+## Coding preferences
+- Keep files small and modular
+- Prefer server actions / route handlers over unnecessary extra services
+- Use clean UI with Tailwind
+- Do not add libraries unless necessary
+- Preserve existing scripts in package.json
+
+## Next tasks for Agent
+1. Add wallet connect for BSC
+2. Add provider service registration form
+3. Connect Drizzle tables to UI
+4. Write receipt creation flow after paid call
+5. Integrate ServiceRegistry contract writes
+EOF
+
+echo
+echo "✅ Bootstrap 完成"
+echo "下一步："
+echo "1) 打开 Replit 的 Database 工具，确认 DATABASE_URL 可用"
+echo "2) 在 Secrets 里添加 BSC_RPC_URL / PRIVATE_KEY / NEXT_PUBLIC_CHAIN_ID / NEXT_PUBLIC_RPC_URL"
+echo "3) 运行：cd agentfuel && pnpm dev"
+echo "4) 编译合约：cd agentfuel && pnpm chain:compile"
