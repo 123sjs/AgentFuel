@@ -71,13 +71,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
-            <a
-              href="#"
-              className="px-3.5 py-1.5 rounded-md text-sm font-medium text-zinc-500 hover:text-zinc-300 hover:bg-white/4 transition-colors duration-150 flex items-center gap-1.5"
+            <Link
+              href="/docs"
+              className="px-3.5 py-1.5 rounded-md text-sm font-medium text-zinc-500 hover:text-zinc-300 hover:bg-white/4 transition-colors duration-150"
             >
               {t("nav_docs")}
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </a>
+            </Link>
           </nav>
 
           {/* Right actions */}
@@ -147,12 +146,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {t(item.labelKey)}
             </Link>
           ))}
-          <a
-            href="#"
-            className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-zinc-500"
+          <Link
+            href="/docs"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium text-zinc-500 hover:text-zinc-300"
           >
-            {t("nav_docs")} <ExternalLink className="w-3.5 h-3.5 opacity-50" />
-          </a>
+            <LayoutDashboard className="w-4 h-4 opacity-40" />
+            {t("nav_docs")}
+          </Link>
 
           <div className="mt-4 border-t border-[#1E293B] pt-4 flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
@@ -211,9 +212,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Links */}
             <div className="flex items-center gap-5">
-              <a href="#" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5">
-                {t("footer_docs")} <ExternalLink className="w-3 h-3" />
-              </a>
+              <Link href="/docs" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+                {t("footer_docs")}
+              </Link>
               <a href="#" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5">
                 {t("footer_github")} <ExternalLink className="w-3 h-3" />
               </a>

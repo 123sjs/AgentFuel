@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 import Market from "@/pages/Market";
 import Dashboard from "@/pages/Dashboard";
 import Playground from "@/pages/Playground";
+import Docs from "@/pages/Docs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,7 @@ function Router() {
         <Route path="/services" component={Market} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/playground" component={Playground} />
+        <Route path="/docs" component={Docs} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
