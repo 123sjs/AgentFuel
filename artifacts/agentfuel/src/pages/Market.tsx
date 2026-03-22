@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useListServices, useCreateService } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -259,14 +259,6 @@ function ListServiceModal({
 }) {
   const { lang } = useLang();
 
-  /* Auto-close after success */
-  useEffect(() => {
-    if (isSuccess) {
-      const timer = setTimeout(() => onOpenChange(false), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [isSuccess, onOpenChange]);
-
   const inputClass =
     "w-full px-3.5 py-2.5 bg-[#06070A] border border-[#1E293B] rounded-xl text-white text-sm focus:ring-1 focus:ring-[#F3BA2F]/40 focus:border-[#F3BA2F]/40 outline-none transition-all placeholder:text-zinc-600";
 
@@ -290,17 +282,21 @@ function ListServiceModal({
               <CheckCircle2 className="w-6 h-6 text-green-400" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white mb-1">Service listing submitted</p>
+              <p className="text-sm font-bold text-white mb-1">
+                {lang === "zh" ? "上架已提交成功" : "Listing submitted successfully"}
+              </p>
               <p className="text-xs text-zinc-500 max-w-xs">
-                Your service is now visible in the registry. Closing in a moment…
+                {lang === "zh"
+                  ? "服务上架已提交成功，刷新后会出现在服务列表中。"
+                  : "Service listing submitted successfully. It will appear in the registry after refresh."}
               </p>
             </div>
             <div className="w-full rounded-xl border border-[#1E293B] bg-black/20 px-4 py-3 text-left space-y-1.5">
               <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-widest">What's next</p>
               <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Your service entry has been created in the AgentFuel registry. Onchain settlement
-                and automatic FUEL staking are being integrated — you will be notified when
-                pay-per-call is live for your endpoint.
+                {lang === "zh"
+                  ? "服务条目已提交至 AgentFuel 注册表。链上结算与 FUEL 自动质押仍在完善中，提交不代表链上部署或支付已开通。"
+                  : "Your service entry has been submitted to the AgentFuel registry. Onchain settlement and automatic FUEL staking are being integrated — this submission does not constitute a BSC deployment or activate payment settlement."}
               </p>
             </div>
           </div>
@@ -382,7 +378,7 @@ function ListServiceModal({
                   <Lock className="w-3 h-3 text-zinc-600 shrink-0" />
                   <span className="text-zinc-400">USDT</span>
                 </div>
-                <FieldHint>Default token — more options coming.</FieldHint>
+                <FieldHint>Current default payment token.</FieldHint>
               </div>
             </div>
 
@@ -444,7 +440,6 @@ export default function Market() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-        /* Modal auto-closes after 2.5s via ListServiceModal's useEffect */
       },
     },
   });
