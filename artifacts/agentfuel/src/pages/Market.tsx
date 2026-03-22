@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useListServices, useCreateService } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Cpu, ArrowRight, Activity, Plus,
   ChevronDown, Server, Layers, Zap,
+  AlertCircle, CheckCircle2, Info, Lock,
 } from "lucide-react";
 import { formatAddress } from "@/lib/utils";
 import { useWallet } from "@/hooks/use-wallet";
@@ -218,78 +219,210 @@ function StatCell({ label, value, unit }: { label: string; value: string; unit?:
   );
 }
 
+/* ─── Field hint ─────────────────────────────────────────────────── */
+function FieldHint({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] text-zinc-600 leading-relaxed flex items-start gap-1 mt-0.5">
+      <Info className="w-2.5 h-2.5 shrink-0 mt-0.5 text-zinc-700" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/* ─── Section label ──────────────────────────────────────────────── */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 pt-1 pb-0.5">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">{children}</span>
+      <div className="flex-1 h-px bg-[#1E293B]" />
+    </div>
+  );
+}
+
 /* ─── List Service Modal ─────────────────────────────────────────── */
 function ListServiceModal({
   isOpen,
   onOpenChange,
   onSubmit,
   isPending,
+  isSuccess,
+  mutationError,
   t,
 }: {
   isOpen: boolean;
   onOpenChange: (v: boolean) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isPending: boolean;
+  isSuccess: boolean;
+  mutationError: unknown;
   t: (k: any) => string;
 }) {
-  const { t: tRaw, lang } = useLang();
-  const notice =
-    lang === "zh"
-      ? "当前已支持服务上架，链上结算流程仍在完善中。"
-      : "Service listing is available now. Onchain settlement is being refined.";
+  const { lang } = useLang();
+
+  /* Auto-close after success */
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => onOpenChange(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, onOpenChange]);
 
   const inputClass =
-    "w-full px-4 py-3 bg-[#06070A] border border-[#1E293B] rounded-xl text-white text-sm focus:ring-1 focus:ring-[#F3BA2F]/40 focus:border-[#F3BA2F]/40 outline-none transition-all placeholder:text-zinc-600";
+    "w-full px-3.5 py-2.5 bg-[#06070A] border border-[#1E293B] rounded-xl text-white text-sm focus:ring-1 focus:ring-[#F3BA2F]/40 focus:border-[#F3BA2F]/40 outline-none transition-all placeholder:text-zinc-600";
+
+  const errorMessage = mutationError
+    ? (mutationError as any)?.message ?? "Submission failed. Please try again."
+    : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-[#0A0F1A] border-[#1E293B]">
+      <DialogContent className="sm:max-w-[520px] bg-[#0A0F1A] border-[#1E293B] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white">
+          <DialogTitle className="text-lg font-bold text-white">
             {t("market_modal_title")}
           </DialogTitle>
-          <p className="text-xs text-zinc-500 mt-1">{notice}</p>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-4 mt-2">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-500">{t("market_service_name")}</label>
-            <input required name="name" className={inputClass} placeholder={t("market_service_name_ph")} />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-500">{t("market_description")}</label>
-            <textarea
-              required name="description"
-              className={`${inputClass} min-h-[90px] resize-none`}
-              placeholder={t("market_description_ph")}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-500">{t("market_endpoint")}</label>
-            <input required name="endpoint" className={inputClass} placeholder={t("market_endpoint_ph")} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-500">{t("market_price")}</label>
-              <input required name="price" type="number" step="0.0001" min="0" className={inputClass} placeholder="0.05" />
+        {/* ── Success state ── */}
+        {isSuccess ? (
+          <div className="py-8 flex flex-col items-center text-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-green-400" />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-500">{t("market_stake")}</label>
-              <input required name="stakeRequired" type="number" min="0" className={inputClass} placeholder="1000" />
+            <div>
+              <p className="text-sm font-bold text-white mb-1">Service listing submitted</p>
+              <p className="text-xs text-zinc-500 max-w-xs">
+                Your service is now visible in the registry. Closing in a moment…
+              </p>
+            </div>
+            <div className="w-full rounded-xl border border-[#1E293B] bg-black/20 px-4 py-3 text-left space-y-1.5">
+              <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-widest">What's next</p>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Your service entry has been created in the AgentFuel registry. Onchain settlement
+                and automatic FUEL staking are being integrated — you will be notified when
+                pay-per-call is live for your endpoint.
+              </p>
             </div>
           </div>
+        ) : (
+          <form onSubmit={onSubmit} className="space-y-4 mt-1">
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full mt-2 px-6 py-3 bg-[#F3BA2F] text-[#06070A] font-bold text-sm rounded-xl hover:bg-[#F3BA2F]/90 disabled:opacity-50 transition-all"
-          >
-            {isPending ? t("market_submitting") : t("market_submit")}
-          </button>
-        </form>
+            {/* ── Notice ── */}
+            <div className="flex gap-2.5 p-3 rounded-xl border border-[#1E293B] bg-[#06070A]/60">
+              <div className="shrink-0 mt-0.5">
+                <Info className="w-3.5 h-3.5 text-zinc-600" />
+              </div>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                {lang === "zh"
+                  ? "上架服务将创建一条注册表条目，当前已支持服务上架。链上结算与 FUEL 自动质押仍在完善中，提交不等于链上部署。"
+                  : "Listing creates a registry entry. Onchain settlement and automatic FUEL staking are being integrated — submitting is not a deployment to BSC."}
+              </p>
+            </div>
+
+            {/* ── Basic Info ── */}
+            <SectionLabel>Basic Info</SectionLabel>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-400">{t("market_service_name")}</label>
+              <input
+                required
+                name="name"
+                className={inputClass}
+                placeholder={t("market_service_name_ph")}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-400">{t("market_description")}</label>
+              <textarea
+                required
+                name="description"
+                className={`${inputClass} min-h-[80px] resize-none`}
+                placeholder={t("market_description_ph")}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-400">{t("market_endpoint")}</label>
+              <input
+                required
+                name="endpoint"
+                className={inputClass}
+                placeholder="https://api.example.com/v1/agent"
+              />
+              <FieldHint>
+                HTTPS URL of your agent's callable API endpoint. Must be publicly reachable.
+              </FieldHint>
+            </div>
+
+            {/* ── Pricing & Network ── */}
+            <SectionLabel>Pricing &amp; Network</SectionLabel>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-zinc-400">{t("market_price")}</label>
+                <input
+                  required
+                  name="price"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  className={inputClass}
+                  placeholder="0.05"
+                />
+                <FieldHint>Amount charged per API call.</FieldHint>
+              </div>
+
+              {/* Currency — read-only, hardcoded USDT */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-zinc-400">
+                  Payment Token
+                </label>
+                <div className={`${inputClass} flex items-center gap-2 cursor-default opacity-70`}>
+                  <Lock className="w-3 h-3 text-zinc-600 shrink-0" />
+                  <span className="text-zinc-400">USDT</span>
+                </div>
+                <FieldHint>Default token — more options coming.</FieldHint>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-400">{t("market_stake")}</label>
+              <input
+                required
+                name="stakeRequired"
+                type="number"
+                min="0"
+                className={inputClass}
+                placeholder="1000"
+              />
+              <FieldHint>
+                FUEL amount shown as the listing requirement. Onchain stake enforcement is being integrated — this field is display-only for now.
+              </FieldHint>
+            </div>
+
+            {/* ── Inline error ── */}
+            {errorMessage && (
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-red-400">{errorMessage}</p>
+              </div>
+            )}
+
+            {/* ── Submit ── */}
+            <button
+              type="submit"
+              disabled={isPending}
+              className="w-full py-3 bg-[#F3BA2F] text-[#06070A] font-bold text-sm rounded-xl hover:bg-[#F3BA2F]/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              {isPending ? (
+                <><span className="w-3.5 h-3.5 border-2 border-[#06070A]/30 border-t-[#06070A] rounded-full animate-spin" /> Submitting…</>
+              ) : (
+                "Submit Listing"
+              )}
+            </button>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -311,10 +444,16 @@ export default function Market() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-        setIsModalOpen(false);
+        /* Modal auto-closes after 2.5s via ListServiceModal's useEffect */
       },
     },
   });
+
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    /* Reset mutation state when the modal is closed */
+    if (!open) createMutation.reset();
+  };
 
   const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -482,9 +621,11 @@ export default function Market() {
       {/* ── List Service Modal ───────────────────────────────────── */}
       <ListServiceModal
         isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={handleModalOpenChange}
         onSubmit={handleCreateSubmit}
         isPending={createMutation.isPending}
+        isSuccess={createMutation.isSuccess}
+        mutationError={createMutation.error}
         t={t}
       />
     </div>
