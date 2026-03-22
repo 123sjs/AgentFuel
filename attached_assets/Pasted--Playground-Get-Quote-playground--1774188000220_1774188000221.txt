@@ -1,0 +1,134 @@
+现在进入第五轮：Playground / Get Quote 页面专业化升级。
+
+全程中文回复。先输出计划，不要直接改代码。
+
+【本轮目标】
+把 /playground 页面升级成一个专业的服务调用 / 报价页面，让用户可以清楚理解：
+- 当前调用的是哪个服务
+- 输入什么参数
+- 是否已报价
+- 支付 / 收据 / 执行流程处于什么状态
+并且为后续真实接入 pay-per-call、收据记录、链上结算预留结构。
+
+【成本与范围约束】
+1. 不新增任何依赖。
+2. 不修改支付逻辑、数据库结构、合约、部署结构。
+3. 不新增后端 API。
+4. 不新增页面路由。
+5. 只允许修改 Playground 相关页面和必要的局部样式/组件。
+6. 不要顺手改首页、Dashboard、Market。
+7. 不要把未接通的链上支付、链上收据伪装成已经正式可用。
+8. 所有 Preview / Example 状态必须明确标识。
+
+【先检查再回答】
+请先检查当前 /playground 的真实用途和相关文件，告诉我：
+1. /playground 对应的是哪个页面文件
+2. 当前页面已有哪些真实功能
+3. 当前哪些数据来自真实路由参数 / hook / API
+4. 当前哪些内容是静态占位或容易误导的
+5. 当前最影响专业感的 5 个问题是什么
+
+【视觉要求】
+延续当前首页、Dashboard、Services 的品牌系统：
+- 深色
+- 专业
+- 克制
+- 基础设施感
+- 黑 / 深蓝 / BSC 金
+- 轻描边
+- 轻毛玻璃
+- 不做花哨大动画
+- 不要像调试页临时表单
+- 不要像 demo hackathon 页面
+
+【页面结构要求】
+请按下面结构设计 Playground 页面：
+
+1. 顶部区域
+- 标题：Service Playground
+- 副标题：Quote, inspect and simulate agent-powered service execution.
+- 右侧可保留一个返回 Services 的入口
+- 如当前支持 serviceId 路由参数，页面顶部要明确显示当前服务名称或 serviceId
+
+2. 服务摘要卡片
+展示当前服务的关键信息：
+- Service Name
+- Description
+- Endpoint
+- Price
+- Payment Token
+- Stake Required
+- Status
+
+要求：
+- 有真实服务数据时显示真实值
+- 无法确认的字段显示 --
+- 不允许编造服务详情
+- endpoint 只展示，不做外链
+
+3. 输入参数区
+做成专业的请求输入面板：
+- 参数输入框 / JSON 输入区 / 文本输入区（按当前真实能力决定）
+- 清晰的字段标题和说明
+- Run Quote / Simulate / Get Quote 按钮
+- 如果当前只是本地模拟或占位，也必须写清楚是 Preview
+
+4. Quote / Payment Summary 区
+展示：
+- Estimated Price
+- Payment Token
+- Settlement Status
+- Receipt Status
+
+要求：
+- 有真实报价逻辑时显示真实值
+- 没有真实报价逻辑时，用明确 Preview 状态，不允许伪造链上支付成功
+- 状态词要准确，例如：
+  - Quote ready
+  - Payment pending
+  - Receipt not recorded
+  - Preview only
+
+5. Execution / Response 面板
+用于显示：
+- 请求体
+- 返回结果
+- 错误信息
+- 状态时间线
+
+要求：
+- 如果当前已有真实调用结果，就按真实结果展示
+- 如果还没有真实执行逻辑，就做专业空状态，不伪造响应
+- 可以分成 Request / Response / Receipt 三个 tab 或三个区块，但不要加新依赖
+
+6. Empty / Guidance 区
+如果没有选中 serviceId 或没有可用服务：
+- 显示专业引导
+- 引导用户先去 Services 页面选择服务
+- 提供返回 Market 的入口
+
+【数据与语义限制】
+1. 不允许伪造链上支付已完成。
+2. 不允许伪造 receipt 已上链。
+3. 不允许伪造报价金额。
+4. 不允许伪造服务调用成功结果。
+5. 任何 Preview 内容必须明确标识。
+6. 不允许把未知单位强行写成 USD / USDT / BNB。
+7. 如果 serviceId 无效，要清楚显示 not found / unavailable，而不是乱填默认服务。
+
+【交互要求】
+1. 保留当前真实可用的 query 参数和已有调用逻辑。
+2. 只升级视觉和信息层级，不乱改真实行为。
+3. 如果按钮还不能完成真实支付或真实执行，必须明确标识 Preview / Simulate。
+4. 移动端可读，输入区和结果区不能挤爆。
+
+【执行前必须先输出】
+请先用中文输出：
+1. 本次会修改哪些文件
+2. 哪些旧结构和逻辑会保留
+3. 哪些区块会重做
+4. 哪些数据会显示真实值，哪些只会显示 Preview
+5. 如何避免把未接通的支付 / 收据 / 报价伪装成真实能力
+6. 完成后的验收标准
+
+等我确认后再开始改代码。
