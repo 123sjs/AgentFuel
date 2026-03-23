@@ -7,45 +7,68 @@ const router: IRouter = Router();
 
 router.post("/quote", async (req, res) => {
   try {
-    const serviceId = req.body?.serviceId ?? "unknown";
+    const rawId = req.body?.serviceId;
 
-    let price = "0.10";
-    let stakeRequired = "1000";
-    let currency = "USDT";
-
-    if (typeof serviceId === "number" || /^\d+$/.test(String(serviceId))) {
-      const [service] = await db
-        .select()
-        .from(servicesTable)
-        .where(eq(servicesTable.id, Number(serviceId)));
-      if (service) {
-        price = service.price;
-        stakeRequired = service.stakeRequired;
-        currency = service.currency;
-      }
-    } else {
-      const mockPrices: Record<string, { price: string; stake: string }> = {
-        "summarize-agent": { price: "0.10", stake: "1000" },
-        "research-agent": { price: "0.25", stake: "2500" },
-      };
-      const mock = mockPrices[serviceId as string];
-      if (mock) {
-        price = mock.price;
-        stakeRequired = mock.stake;
-      }
+    if (rawId === undefined || rawId === null || rawId === "") {
+      res.status(400).json({
+        ok: false,
+        reason: "invalid_request",
+        message: "serviceId is required and must be a numeric service ID",
+      });
+      return;
     }
+
+    if (!/^\d+$/.test(String(rawId))) {
+      res.status(400).json({
+        ok: false,
+        reason: "invalid_request",
+        message: "serviceId is required and must be a numeric service ID",
+      });
+      return;
+    }
+
+    const numericId = Number(rawId);
+
+    const [service] = await db
+      .select()
+      .from(servicesTable)
+      .where(eq(servicesTable.id, numericId));
+
+    if (!service) {
+      res.status(404).json({
+        ok: false,
+        reason: "not_found",
+        message: "Service not found",
+      });
+      return;
+    }
+
+    if (!service.active) {
+      res.status(422).json({
+        ok: false,
+        reason: "inactive",
+        message: "Service is not currently accepting quotes",
+      });
+      return;
+    }
+
+    const price = service.price;
+    const token = service.currency;
+    const stakeRequired = service.stakeRequired;
+    const ts = Date.now();
+    const paymentHeader = `af-quote:sid=${service.id};price=${price};token=${token};ts=${ts}`;
 
     res.json({
       ok: true,
-      serviceId: String(serviceId),
+      serviceId: String(service.id),
       price,
-      token: currency,
+      token,
       stakeRequired: `${stakeRequired} FUEL`,
-      paymentHeader: "X-PAYMENT",
+      paymentHeader,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get quote");
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ ok: false, reason: "server_error", error: "Internal server error" });
   }
 });
 

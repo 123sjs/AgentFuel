@@ -8,4 +8,13 @@ router.get("/healthz", (_req, res) => {
   res.json(data);
 });
 
+router.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    app: "AgentFuel API",
+    time: new Date().toISOString(),
+    note: "Basic API health check for the current product.",
+  });
+});
+
 export default router;

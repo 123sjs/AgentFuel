@@ -17,11 +17,11 @@ export const translations = {
     disconnect: "Disconnect",
 
     // Home (legacy keys — kept for safety)
-    home_badge: "BSC Testnet Live",
+    home_badge: "BSC Testnet",
     home_hero_title: "The Native Commerce Layer for",
     home_hero_highlight: "AI Agents",
     home_hero_desc:
-      "AgentFuel enables instant, trustless pay-per-call microtransactions between AI agents and human users on the Binance Smart Chain.",
+      "AgentFuel provides a pay-per-call commerce layer for AI agents and API services on the Binance Smart Chain.",
     home_explore: "Explore Market",
     home_provider: "Provider Dashboard",
     home_viz_title: "Decentralized Intelligence",
@@ -32,46 +32,48 @@ export const translations = {
       "Discover and connect with specialized AI agents offering APIs, data processing, and complex reasoning.",
     home_feature_dashboard_title: "Provider Dashboard",
     home_feature_dashboard_desc:
-      "Register your agent, stake FUEL, track your real-time earnings, and monitor performance metrics.",
+      "Register your agent, set FUEL stake requirements, track earnings, and monitor service performance.",
     home_feature_playground_title: "Developer Playground",
     home_feature_playground_desc:
-      "Test agent connections, simulate payments, and verify cryptographic receipts instantly.",
+      "Test service quote flows, inspect quote results, and review API responses.",
 
     // Home v2 — new sections
-    home2_hero_title: "Payment & Reputation Layer for AI Agents on BSC",
+    home2_hero_title: "Pay-per-call Commerce Layer for AI Agents on BSC",
     home2_hero_sub:
-      "Let any Agent, API or MCP service accept pay-per-call fees, FUEL staking and verifiable receipts.",
+      "AgentFuel provides listing, quoting, and settlement infrastructure for AI agents, APIs, and MCP services on BSC.",
     home2_tag_bsc: "BSC Testnet",
     home2_tag_ppc: "Pay-per-call",
     home2_tag_staking: "FUEL Staking",
     home2_tag_receipts: "Verifiable Receipts",
     home2_panel_req: "① Request",
-    home2_panel_pay: "② Payment",
+    home2_panel_pay: "② Quote",
     home2_panel_receipt: "③ Receipt",
-    home2_panel_receipt_ok: "Receipt verified on-chain",
-    home2_panel_receipt_sub: "Immutable · Auditable",
+    home2_panel_receipt_ok: "Receipt generated",
+    home2_panel_receipt_sub: "Structured · Inspectable",
     home2_how_title: "How AgentFuel Works",
     home2_step1_title: "Register Service",
-    home2_step1_desc: "Publish your API endpoint to the on-chain service registry.",
-    home2_step2_title: "Stake FUEL",
-    home2_step2_desc: "Deposit FUEL tokens as collateral to signal reliability to callers.",
+    home2_step1_desc: "Publish your API endpoint to the AgentFuel service registry.",
+    home2_step2_title: "Set Stake Requirement",
+    home2_step2_desc:
+      "Set a FUEL stake requirement field in your listing. Onchain enforcement is being integrated.",
     home2_step3_title: "Earn Per Call",
-    home2_step3_desc: "Callers pay per request. Receipts are stored on-chain and auditable.",
+    home2_step3_desc:
+      "Callers obtain a quote and pay per request. Receipt recording is being integrated.",
     home2_why_title: "Why AgentFuel",
     home2_why1_title: "BSC-native Settlement",
     home2_why1_desc:
       "Payments settle directly on Binance Smart Chain. No bridges, no middleware.",
-    home2_why2_title: "Tokenized Trust Layer",
+    home2_why2_title: "FUEL Stake Requirement",
     home2_why2_desc:
-      "Providers stake FUEL as collateral. Stake is slashable on failed service-level agreements.",
+      "Providers set a FUEL stake requirement in their listings. Onchain staking enforcement is being integrated.",
     home2_why3_title: "Verifiable Execution Receipts",
     home2_why3_desc:
-      "Every call generates a cryptographic receipt stored on-chain and auditable by any party.",
+      "Every call generates a structured receipt. Onchain storage and auditability are being integrated.",
     home2_cta_title:
-      "Launch your agent service with payment, staking and trust built in.",
+      "Launch your agent service. Listing and quoting are available now.",
     home2_cta_launch: "Launch App",
     home2_cta_dashboard: "View Dashboard",
-    footer_desc: "Payment and reputation infrastructure for AI agents on BSC.",
+    footer_desc: "Pay-per-call commerce infrastructure for AI agents on BSC.",
     footer_docs: "Docs",
     footer_github: "GitHub",
     footer_contracts: "Testnet Contracts",
@@ -81,7 +83,7 @@ export const translations = {
     // Market
     market_title: "Service Market",
     market_desc:
-      "Discover and integrate autonomous AI agents. Pay per call instantly using smart contracts.",
+      "Discover and integrate AI agents and API services. Get quotes and pay per call.",
     market_search: "Search agents...",
     market_list_service: "List Service",
     market_no_agents: "No agents found",
@@ -107,7 +109,7 @@ export const translations = {
     // Dashboard — existing keys
     dash_title: "Provider Dashboard",
     dash_connect_desc:
-      "Connect your wallet to manage your AI agents, view earnings, and monitor your on-chain reputation.",
+      "Connect your wallet to manage your AI agents, view earnings, and monitor service performance.",
     dash_become_title: "Become a Provider",
     dash_become_desc:
       "Register your wallet on the AgentFuel network to start earning from your AI services.",
@@ -135,7 +137,7 @@ export const translations = {
     dash_failed: "Failed",
 
     // Dashboard — new keys (v2 UI upgrade)
-    dash_subtitle: "Manage services, staking, receipts and reputation on BSC.",
+    dash_subtitle: "Manage services, stake requirements, and receipts on BSC.",
     dash_register_service: "Register Service",
     dash_stake_fuel: "Stake FUEL",
     dash_active_services: "Active Services",
@@ -166,33 +168,36 @@ export const translations = {
     dash_step1_desc: "Connect your wallet to the AgentFuel network.",
     dash_step2_label: "Register Service",
     dash_step2_desc: "Publish your first AI service endpoint to the registry.",
-    dash_step3_label: "Stake FUEL",
+    dash_step3_label: "Set Stake Requirement",
     dash_step3_desc:
-      "Deposit FUEL tokens as collateral to signal reliability to callers.",
+      "Set a FUEL stake requirement field in your listing. Onchain enforcement is being integrated.",
     dash_step4_label: "Record Receipts",
     dash_step4_desc:
-      "Call receipts are recorded on-chain automatically per request.",
+      "Call receipts are generated per request. Onchain recording is being integrated.",
 
     // Playground
     play_title: "API Playground",
     play_desc:
-      "Test Agent calls and simulate the decentralized quote & payment workflow.",
+      "Test service quote flows and inspect API responses.",
     play_configure: "Configure Request",
     play_select: "Select Service Agent",
     play_select_ph: "-- Select an Agent --",
     play_payload: "JSON Payload",
-    play_wallet_prompt: "Connect wallet to authorize payments",
+    play_wallet_prompt: "Connect wallet to continue",
     play_submit: "Request Quote & Call",
     play_submitting: "Negotiating Quote...",
     play_result: "Execution Result",
     play_empty:
-      "Submit a request to see the cryptographic quote and API response.",
+      "Submit a request to see the quote result and API response.",
     play_proving: "Generating cryptographic proof...",
     play_failed: "Request Failed",
     play_quote_label: "Cryptographic Quote",
     play_payment: "Payment Required",
     play_stake_limit: "Provider Stake Limit",
     play_header: "X-Payment-Header",
+    play_err_invalid: "Invalid request — serviceId is required and must be a numeric ID.",
+    play_err_not_found: "Service not found — it may have been removed from the registry.",
+    play_err_inactive: "This service is not currently accepting quotes.",
   },
 
   zh: {
@@ -209,11 +214,11 @@ export const translations = {
     disconnect: "断开连接",
 
     // Home (legacy keys — kept for safety)
-    home_badge: "BSC 测试网上线",
+    home_badge: "BSC 测试网",
     home_hero_title: "面向",
     home_hero_highlight: "AI Agent",
     home_hero_desc:
-      "AgentFuel 在币安智能链上实现 AI Agent 与用户之间即时、免信任的按次付费微交易。",
+      "AgentFuel 为币安智能链上的 AI Agent 与 API 服务提供按次付费商业基础设施。",
     home_explore: "探索市场",
     home_provider: "服务商仪表盘",
     home_viz_title: "去中心化智能",
@@ -223,43 +228,46 @@ export const translations = {
       "发现并连接提供 API、数据处理和复杂推理的专业 AI Agent。",
     home_feature_dashboard_title: "服务商仪表盘",
     home_feature_dashboard_desc:
-      "注册 Agent、质押 FUEL、实时追踪收益并监控绩效指标。",
+      "注册 Agent、设置 FUEL 质押要求字段、追踪收益并监控服务绩效。",
     home_feature_playground_title: "开发者测试台",
     home_feature_playground_desc:
-      "测试 Agent 连接、模拟支付并即时验证加密收据。",
+      "测试服务报价流程，检查报价结果并查看 API 响应。",
 
     // Home v2 — new sections
-    home2_hero_title: "BSC 上 AI Agent 的支付与信誉执行层",
+    home2_hero_title: "BSC 上 AI Agent 的按次付费商业基础设施",
     home2_hero_sub:
-      "让任何 Agent / API / MCP 服务接入按次收费、FUEL 质押与可验证收据。",
+      "AgentFuel 为 BSC 上的 AI Agent、API 与 MCP 服务提供上架、报价与结算基础设施。",
     home2_tag_bsc: "BSC 测试网",
     home2_tag_ppc: "按次付费",
     home2_tag_staking: "FUEL 质押",
     home2_tag_receipts: "可验证收据",
     home2_panel_req: "① 请求",
-    home2_panel_pay: "② 支付",
+    home2_panel_pay: "② 报价",
     home2_panel_receipt: "③ 收据",
-    home2_panel_receipt_ok: "收据已在链上验证",
-    home2_panel_receipt_sub: "不可篡改 · 可审计",
+    home2_panel_receipt_ok: "收据已生成",
+    home2_panel_receipt_sub: "结构化 · 可检查",
     home2_how_title: "AgentFuel 如何运作",
     home2_step1_title: "注册服务",
-    home2_step1_desc: "将 API 端点发布到链上服务注册表。",
-    home2_step2_title: "质押 FUEL",
-    home2_step2_desc: "存入 FUEL 代币作为抵押，向调用方证明可信度。",
+    home2_step1_desc: "将 API 端点发布到 AgentFuel 服务注册表。",
+    home2_step2_title: "设置质押要求",
+    home2_step2_desc:
+      "在服务上架信息中设置 FUEL 质押要求字段，链上强制执行仍在完善中。",
     home2_step3_title: "按次收益",
-    home2_step3_desc: "调用方按次付费，收据链上存储，任何方可审计。",
+    home2_step3_desc:
+      "调用方获取报价后按次付费，收据记录功能仍在完善中。",
     home2_why_title: "为什么选择 AgentFuel",
     home2_why1_title: "BSC 原生结算",
     home2_why1_desc: "支付直接在币安智能链上结算，无需跨链桥接，无中间件。",
-    home2_why2_title: "代币化信任层",
+    home2_why2_title: "FUEL 质押要求字段",
     home2_why2_desc:
-      "服务商质押 FUEL 作为抵押，违反 SLA 时抵押金可被扣减。",
+      "服务商在上架信息中设置 FUEL 质押要求字段，链上质押强制执行仍在完善中。",
     home2_why3_title: "可验证执行收据",
-    home2_why3_desc: "每次调用生成链上加密收据，任何一方均可随时审计。",
-    home2_cta_title: "内置支付、质押与信任机制，立即上线你的 Agent 服务。",
+    home2_why3_desc:
+      "每次调用生成结构化收据，链上存储与审计功能仍在完善中。",
+    home2_cta_title: "立即上线你的 Agent 服务，上架与报价功能现已可用。",
     home2_cta_launch: "立即上线",
     home2_cta_dashboard: "查看仪表盘",
-    footer_desc: "BSC 上 AI Agent 的支付与信誉基础设施。",
+    footer_desc: "BSC 上 AI Agent 的按次付费商业基础设施。",
     footer_docs: "文档",
     footer_github: "GitHub",
     footer_contracts: "测试网合约",
@@ -268,7 +276,7 @@ export const translations = {
 
     // Market
     market_title: "服务市场",
-    market_desc: "发现并接入自主 AI Agent，通过智能合约按次即时付费。",
+    market_desc: "发现并接入 AI Agent 与 API 服务，获取报价并按次付费。",
     market_search: "搜索 Agent...",
     market_list_service: "上架服务",
     market_no_agents: "未找到 Agent",
@@ -293,7 +301,7 @@ export const translations = {
     // Dashboard — existing keys
     dash_title: "服务商仪表盘",
     dash_connect_desc:
-      "连接钱包以管理 AI Agent、查看收益并监控链上信誉。",
+      "连接钱包以管理 AI Agent、查看收益并监控服务绩效。",
     dash_become_title: "成为服务商",
     dash_become_desc:
       "在 AgentFuel 网络注册您的钱包，开始从 AI 服务中获益。",
@@ -321,7 +329,7 @@ export const translations = {
     dash_failed: "失败",
 
     // Dashboard — new keys (v2 UI upgrade)
-    dash_subtitle: "管理 BSC 上的服务、质押、收据与信誉。",
+    dash_subtitle: "管理 BSC 上的服务、质押要求字段与收据。",
     dash_register_service: "注册服务",
     dash_stake_fuel: "质押 FUEL",
     dash_active_services: "活跃服务",
@@ -352,29 +360,34 @@ export const translations = {
     dash_step1_desc: "将钱包连接到 AgentFuel 网络。",
     dash_step2_label: "注册服务",
     dash_step2_desc: "将您的第一个 AI 服务端点发布到注册表。",
-    dash_step3_label: "质押 FUEL",
-    dash_step3_desc: "存入 FUEL 代币作为抵押，向调用方证明可信度。",
+    dash_step3_label: "设置质押要求",
+    dash_step3_desc:
+      "在服务上架信息中设置 FUEL 质押要求字段，链上强制执行仍在完善中。",
     dash_step4_label: "记录收据",
-    dash_step4_desc: "每次调用后收据将自动链上记录。",
+    dash_step4_desc:
+      "每次调用后生成结构化收据，链上记录功能仍在完善中。",
 
     // Playground
     play_title: "API 测试台",
-    play_desc: "测试 Agent 调用，模拟去中心化报价与支付流程。",
+    play_desc: "测试服务报价流程，检查报价结果并查看 API 响应。",
     play_configure: "配置请求",
     play_select: "选择 Agent 服务",
     play_select_ph: "-- 请选择 Agent --",
     play_payload: "JSON 载荷",
-    play_wallet_prompt: "连接钱包以授权支付",
+    play_wallet_prompt: "连接钱包以继续",
     play_submit: "请求报价并调用",
     play_submitting: "协商报价中...",
     play_result: "执行结果",
-    play_empty: "提交请求后查看加密报价和 API 响应。",
+    play_empty: "提交请求后查看报价结果和 API 响应。",
     play_proving: "生成加密证明中...",
     play_failed: "请求失败",
     play_quote_label: "加密报价",
     play_payment: "应付金额",
     play_stake_limit: "服务商质押上限",
     play_header: "X-Payment-Header",
+    play_err_invalid: "请求无效 — serviceId 必须为数字格式的服务 ID。",
+    play_err_not_found: "服务不存在 — 该服务可能已从注册表中移除。",
+    play_err_inactive: "该服务当前不接受报价请求。",
   },
 } as const;
 

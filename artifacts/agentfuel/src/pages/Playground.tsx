@@ -376,17 +376,27 @@ export default function Playground() {
             )}
 
             {/* Error */}
-            {error && (
-              <div className="flex-1 p-5 rounded-xl bg-red-500/5 border border-red-500/20 overflow-auto">
-                <div className="flex items-center gap-2 mb-3 text-red-400 font-bold text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  {t("play_failed")}
+            {error && (() => {
+              const reason = (error as any)?.response?.data?.reason as string | undefined;
+              const msgKey =
+                reason === "invalid_request" ? "play_err_invalid"
+                : reason === "not_found"     ? "play_err_not_found"
+                : reason === "inactive"      ? "play_err_inactive"
+                : null;
+              return (
+                <div className="flex-1 p-5 rounded-xl bg-red-500/5 border border-red-500/20 overflow-auto">
+                  <div className="flex items-center gap-2 mb-3 text-red-400 font-bold text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    {msgKey ? t(msgKey) : t("play_failed")}
+                  </div>
+                  {!msgKey && (
+                    <pre className="text-xs font-mono text-red-300 whitespace-pre-wrap">
+                      {JSON.stringify(error, null, 2)}
+                    </pre>
+                  )}
                 </div>
-                <pre className="text-xs font-mono text-red-300 whitespace-pre-wrap">
-                  {JSON.stringify(error, null, 2)}
-                </pre>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Quote result — real API data only */}
             {quoteResult && (
