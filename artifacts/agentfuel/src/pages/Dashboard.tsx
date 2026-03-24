@@ -315,7 +315,7 @@ export default function Dashboard() {
             href="/services"
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#1E293B] bg-white/3 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-all"
           >
-            Explore Services <ArrowRight className="w-3.5 h-3.5" />
+            {t("dash_explore_services")} <ArrowRight className="w-3.5 h-3.5" />
           </Link>
 
           {/* Stake FUEL — not yet functional */}
@@ -325,7 +325,7 @@ export default function Dashboard() {
             title="FUEL staking is not yet available"
           >
             {t("dash_stake_fuel")}
-            <PillBadge label="Coming soon" variant="soon" />
+            <PillBadge label={t("dash_coming_soon")} variant="soon" />
           </button>
         </div>
       </div>
@@ -398,7 +398,7 @@ export default function Dashboard() {
             badge={
               isCorrectNetwork ? (
                 <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-medium">
-                  Testnet
+                  {t("dash_testnet")}
                 </span>
               ) : (
                 <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 font-medium">
@@ -503,7 +503,7 @@ export default function Dashboard() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-700/30 text-zinc-500 text-[10px] font-medium border border-zinc-700/40">
-                          Inactive
+                          {t("dash_inactive")}
                         </span>
                       )}
                     </td>

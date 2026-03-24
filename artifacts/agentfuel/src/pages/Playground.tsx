@@ -63,20 +63,20 @@ function StatusRow({
 
 /* ─── Service not found ──────────────────────────────────────────── */
 function ServiceNotFound() {
+  const { t } = useLang();
   return (
     <div className="max-w-lg mx-auto py-20 text-center">
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-10">
         <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-4" />
-        <h2 className="text-lg font-bold text-white mb-2">Service Not Found</h2>
+        <h2 className="text-lg font-bold text-white mb-2">{t("play_service_not_found")}</h2>
         <p className="text-sm text-zinc-500 mb-6">
-          The service ID in this URL does not match any available service.
-          It may have been removed or the link may be incorrect.
+          {t("play_service_not_found_desc")}
         </p>
         <Link
           href="/services"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#F3BA2F] text-[#06070A] font-bold text-sm hover:bg-[#F3BA2F]/90 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Services
+          <ArrowLeft className="w-4 h-4" /> {t("play_back_to_services")}
         </Link>
       </div>
     </div>
@@ -85,20 +85,20 @@ function ServiceNotFound() {
 
 /* ─── No service selected ────────────────────────────────────────── */
 function NoServiceSelected() {
+  const { t } = useLang();
   return (
     <div className="max-w-lg mx-auto py-20 text-center">
       <div className="rounded-2xl border border-[#1E293B] bg-[#06070A]/60 p-10">
         <Shield className="w-10 h-10 text-zinc-600 mx-auto mb-4" />
-        <h2 className="text-lg font-bold text-white mb-2">No Service Selected</h2>
+        <h2 className="text-lg font-bold text-white mb-2">{t("play_no_service_title")}</h2>
         <p className="text-sm text-zinc-500 mb-6">
-          Select a service from the market to begin quoting and inspecting
-          agent-powered service execution.
+          {t("play_no_service_desc")}
         </p>
         <Link
           href="/services"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#F3BA2F] text-[#06070A] font-bold text-sm hover:bg-[#F3BA2F]/90 transition-colors"
         >
-          Browse Services <ChevronRight className="w-4 h-4" />
+          {t("play_browse_services")} <ChevronRight className="w-4 h-4" />
         </Link>
       </div>
     </div>
@@ -212,31 +212,31 @@ export default function Playground() {
             </div>
             {selectedService.active ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-green-500/20 bg-green-500/8 text-[10px] text-green-400 font-medium">
-                <span className="w-1 h-1 rounded-full bg-green-400" /> Active
+                <span className="w-1 h-1 rounded-full bg-green-400" /> {t("market_active")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-zinc-700/40 bg-zinc-900/40 text-[10px] text-zinc-500 font-medium">
-                Inactive
+                {t("play_service_inactive")}
               </span>
             )}
           </div>
 
           <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <SummaryCell label="Description" value={selectedService.description} mono={false} />
+            <SummaryCell label={t("play_summary_desc")} value={selectedService.description} mono={false} />
             {/* Endpoint: plain text only, no external link */}
             <SummaryCell
-              label="Endpoint"
+              label={t("play_summary_endpoint")}
               value={selectedService.endpoint}
               mono
               truncate
               fullValue={selectedService.endpoint}
             />
             <SummaryCell
-              label="Price per Call"
+              label={t("play_summary_price")}
               value={`${parseFloat(selectedService.price)} ${selectedService.currency}`}
             />
             <SummaryCell
-              label="Stake Required"
+              label={t("play_summary_stake")}
               value={
                 !selectedService.stakeRequired || selectedService.stakeRequired === "0"
                   ? "--"
@@ -259,7 +259,7 @@ export default function Playground() {
         >
           <div className="px-6 py-4 border-b border-[#1E293B]">
             <h2 className="text-sm font-bold text-white">{t("play_configure")}</h2>
-            <p className="text-xs text-zinc-600 mt-0.5">Select a service and provide a JSON input payload.</p>
+            <p className="text-xs text-zinc-600 mt-0.5">{t("play_configure_hint")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-5 flex flex-col flex-1">
@@ -364,7 +364,7 @@ export default function Playground() {
             <h2 className="text-sm font-bold text-white">{t("play_result")}</h2>
             {quoteResult && (
               <span className="px-2 py-0.5 rounded text-[10px] border border-green-500/20 bg-green-500/8 text-green-400 font-medium">
-                Quote ready
+                {t("play_quote_ready_badge")}
               </span>
             )}
             {error && (
@@ -381,7 +381,7 @@ export default function Playground() {
               <div className="flex-1 flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-[#1E293B] bg-black/10 p-8">
                 <Shield className="w-10 h-10 text-zinc-700 mb-4" />
                 <p className="text-sm text-zinc-500">{t("play_empty")}</p>
-                <p className="text-xs text-zinc-600 mt-1">Quote results will appear here.</p>
+                <p className="text-xs text-zinc-600 mt-1">{t("play_result_hint")}</p>
               </div>
             )}
 
@@ -429,7 +429,7 @@ export default function Playground() {
                   <div className="grid grid-cols-2 gap-3">
                     <QuoteField label={t("play_payment")} value={`${quoteResult.price} ${quoteResult.token}`} />
                     <QuoteField
-                      label="Stake Required"
+                      label={t("play_summary_stake")}
                       value={
                         !quoteResult.stakeRequired || quoteResult.stakeRequired === "0"
                           ? "--"
@@ -441,11 +441,11 @@ export default function Playground() {
                   {/* Payment Header — technical field only, not a payment proof */}
                   <div className="col-span-2 space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-zinc-600">Payment Header</span>
+                      <span className="text-[10px] text-zinc-600">{t("play_payment_header_label")}</span>
                       <CopyButton text={quoteResult.paymentHeader} />
                     </div>
                     <p className="text-[9px] text-zinc-600 italic mb-1">
-                      Quote API response field — not a payment proof
+                      {t("play_payment_header_note")}
                     </p>
                     <div className="px-3 py-2 rounded-lg bg-black/40 border border-[#1E293B]">
                       <span className="font-mono text-[10px] text-zinc-400 break-all">
@@ -460,26 +460,26 @@ export default function Playground() {
                 {/* Execution pipeline status — 4 distinct states, clearly labeled */}
                 <div className="rounded-xl border border-[#1E293B] bg-black/20 p-4">
                   <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">
-                    Execution Pipeline
+                    {t("play_pipeline_title")}
                   </p>
                   <StatusRow
-                    label="Quote ready"
-                    description="Quote received from the AgentFuel API. Price and payment header are available."
+                    label={t("play_stage1_label")}
+                    description={t("play_stage1_desc")}
                     ready={true}
                   />
                   <StatusRow
-                    label="Execution not run"
-                    description="Service call requires confirmed payment to execute. No request has been sent to the provider."
+                    label={t("play_stage2_label")}
+                    description={t("play_stage2_desc")}
                     ready={false}
                   />
                   <StatusRow
-                    label="Settlement not started"
-                    description="Onchain payment settlement is being integrated. No funds have been transferred."
+                    label={t("play_stage3_label")}
+                    description={t("play_stage3_desc")}
                     ready={false}
                   />
                   <StatusRow
-                    label="Receipt not recorded"
-                    description="Receipts will be stored onchain per call after settlement is live."
+                    label={t("play_stage4_label")}
+                    description={t("play_stage4_desc")}
                     ready={false}
                   />
                 </div>
@@ -504,7 +504,7 @@ function PageHeader({ showBack }: { showBack?: boolean }) {
           {t("play_title")}
         </h1>
         <p className="text-sm text-zinc-500">
-          Quote, inspect and simulate agent-powered service execution.
+          {t("play_subtitle")}
         </p>
       </div>
       {showBack && (
@@ -512,7 +512,7 @@ function PageHeader({ showBack }: { showBack?: boolean }) {
           href="/services"
           className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 transition-colors shrink-0"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Services
+          <ArrowLeft className="w-3.5 h-3.5" /> {t("play_back_to_services")}
         </Link>
       )}
     </div>
