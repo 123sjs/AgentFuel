@@ -174,6 +174,9 @@ export const translations = {
     dash_step4_label: "Record Receipts",
     dash_step4_desc:
       "Call receipts are generated per request. Onchain recording is being integrated.",
+    dash_registered: "Registered",
+    dash_col_tx_hash: "Tx Hash",
+    dash_col_payer: "Payer",
 
     // Playground
     play_title: "API Playground",
@@ -373,6 +376,9 @@ export const translations = {
     dash_step4_label: "记录收据",
     dash_step4_desc:
       "每次调用后生成结构化收据，链上记录功能仍在完善中。",
+    dash_registered: "注册时间",
+    dash_col_tx_hash: "交易哈希",
+    dash_col_payer: "付款方",
 
     // Playground
     play_title: "API 测试台",

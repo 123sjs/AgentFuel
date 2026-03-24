@@ -9,16 +9,24 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
-  ShieldCheck, Coins, Zap, CheckCircle2, AlertCircle,
+  ShieldCheck, Coins, CheckCircle2, AlertCircle,
   TrendingUp, Wallet, Database, Server, Activity,
-  ArrowRight, Info, ChevronRight, ExternalLink,
+  ArrowRight, Info, ChevronRight,
 } from "lucide-react";
 import { formatAddress } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
 
-/* ─── Constants ────────────────────────────────────────────────── */
-const FUEL_SHORT = "0x3e9f…ffff";
-const FUEL_CONTRACT = "0x3e9fc4f2acf5d6f7815cb9f38b2c69576088ffff";
+/* ─── Helpers ───────────────────────────────────────────────────── */
+/**
+ * Returns true ONLY when val is a finite numeric string equal to zero.
+ * null / undefined / empty / NaN / non-numeric strings → false.
+ */
+function isZeroNumericString(val: string | null | undefined): boolean {
+  if (val == null || val.trim() === "") return false;
+  const n = Number(val);
+  if (!Number.isFinite(n)) return false;
+  return n === 0;
+}
 
 /* ─── Shared sub-components ────────────────────────────────────── */
 
@@ -199,10 +207,10 @@ export default function Dashboard() {
 
   /* ── Full dashboard ── */
 
-  // Real services owned by this provider (filter by provider address)
+  // Real services owned by this provider (filter by ownerAddress)
   const myServices =
     allServices?.filter(
-      (s) => s.provider?.toLowerCase() === address?.toLowerCase()
+      (s) => s.ownerAddress?.toLowerCase() === address?.toLowerCase()
     ) ?? [];
   const hasRealServices = myServices.length > 0;
 
@@ -211,17 +219,27 @@ export default function Dashboard() {
 
   // Active services count — from real API only
   const activeServicesCount = hasRealServices
-    ? myServices.filter((s) => s.isActive).length
+    ? myServices.filter((s) => s.active).length
     : null;
 
   /* Stat cards:
      - value: real API data or "--" (never estimated)
      - unit: only shown when value is real */
+  const stakedFuelDisplay =
+    myProvider?.stakedFuel != null && !isZeroNumericString(myProvider.stakedFuel)
+      ? myProvider.stakedFuel
+      : "--";
+
+  const totalEarningsDisplay =
+    myProvider?.totalEarnings != null && !isZeroNumericString(myProvider.totalEarnings)
+      ? myProvider.totalEarnings
+      : "--";
+
   const statCards = [
     {
       labelKey: "dash_staked" as const,
-      value: myProvider?.stakedFuel ? String(myProvider.stakedFuel) : "--",
-      unit: myProvider?.stakedFuel ? "FUEL" : "",
+      value: stakedFuelDisplay,
+      unit: stakedFuelDisplay !== "--" ? "FUEL" : "",
       icon: Coins,
       accentColor: "#F3BA2F",
       iconClass: "text-[#F3BA2F]",
@@ -238,7 +256,6 @@ export default function Dashboard() {
     },
     {
       labelKey: "dash_active_services" as const,
-      // Only show a number if we have confirmed real data; show "--" while loading
       value: allServices == null ? "--" : String(activeServicesCount ?? 0),
       unit: "",
       icon: Server,
@@ -247,10 +264,7 @@ export default function Dashboard() {
     },
     {
       labelKey: "dash_earnings" as const,
-      // Total Earnings: only from API. No unit prefix — unit not confirmed.
-      value: myProvider?.totalEarnings != null && myProvider.totalEarnings !== "0"
-        ? String(myProvider.totalEarnings)
-        : "--",
+      value: totalEarningsDisplay,
       unit: "",
       icon: TrendingUp,
       accentColor: "#22c55e",
@@ -264,22 +278,22 @@ export default function Dashboard() {
       name: "DeFi Sentiment Agent",
       endpoint: "api.example.com/v1/sentiment",
       price: "0.05 USDT",
-      token: FUEL_SHORT,
+      token: "FUEL",
       stake: "1,000 FUEL",
     },
     {
       name: "On-Chain Price Oracle",
       endpoint: "api.example.com/v1/oracle",
       price: "0.02 USDT",
-      token: FUEL_SHORT,
+      token: "FUEL",
       stake: "500 FUEL",
     },
   ];
 
   /* Preview receipt rows (only shown when no real receipts exist) */
   const previewReceipts = [
-    { id: "EX-001", service: "defi-sentiment-v1", token: "USDT", amount: "0.05" },
-    { id: "EX-002", service: "price-oracle-v1",   token: "USDT", amount: "0.02" },
+    { id: "EX-001", payer: "0x1a2b…ef34", token: "USDT", amount: "0.05", txHash: null as string | null },
+    { id: "EX-002", payer: "0x5c6d…ab78", token: "USDT", amount: "0.02", txHash: null as string | null },
   ];
 
   return (
@@ -376,26 +390,23 @@ export default function Dashboard() {
           />
           <StatusRow
             label={t("dash_network")}
-            value="BSC Testnet"
+            value={networkName ?? "--"}
             badge={
-              <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-medium">
-                Testnet
-              </span>
+              isCorrectNetwork ? (
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-medium">
+                  Testnet
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 font-medium">
+                  {t("net_wrong_network")}
+                </span>
+              )
             }
           />
           <StatusRow
             label={t("dash_fuel_contract")}
-            value={FUEL_SHORT}
-            badge={
-              <a
-                href={`https://testnet.bscscan.com/token/${FUEL_CONTRACT}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-zinc-300 transition-colors"
-              >
-                <ExternalLink className="w-3 h-3 text-zinc-600" />
-              </a>
-            }
+            value="--"
+            badge={<PillBadge label="Coming soon" variant="soon" />}
           />
           {/* Preview-only fields — clearly labeled */}
           <StatusRow
@@ -409,9 +420,13 @@ export default function Dashboard() {
             badge={<PillBadge label="Coming soon" variant="soon" />}
           />
           <StatusRow
-            label={t("dash_last_activity")}
-            value="--"
-            badge={<PillBadge label="Coming soon" variant="soon" />}
+            label={t("dash_registered")}
+            value={
+              myProvider?.createdAt
+                ? new Date(myProvider.createdAt).toLocaleDateString()
+                : "--"
+            }
+            badge={null}
           />
         </div>
       </motion.div>
@@ -458,16 +473,16 @@ export default function Dashboard() {
                       {svc.endpoint}
                     </td>
                     <td className="px-5 py-3.5 text-zinc-300">
-                      {svc.pricePerCall} USDT
+                      {svc.price} {svc.currency || "USDT"}
                     </td>
                     <td className="px-5 py-3.5 text-zinc-500 font-mono hidden lg:table-cell">
-                      {FUEL_SHORT}
+                      {svc.currency || "--"}
                     </td>
                     <td className="px-5 py-3.5 text-zinc-500 hidden lg:table-cell">
-                      {svc.stakeRequired} FUEL
+                      {isZeroNumericString(svc.stakeRequired) ? "--" : `${svc.stakeRequired} FUEL`}
                     </td>
                     <td className="px-5 py-3.5">
-                      {svc.isActive ? (
+                      {svc.active ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] font-medium border border-green-500/20">
                           <span className="w-1 h-1 rounded-full bg-green-400" />
                           {t("market_active")}
@@ -526,17 +541,18 @@ export default function Dashboard() {
             <thead className="bg-black/20 text-zinc-600 font-medium border-b border-[#1E293B]">
               <tr>
                 <th className="px-5 py-3">{t("dash_receipt_id")}</th>
-                <th className="px-5 py-3 hidden md:table-cell">{t("dash_col_service")}</th>
+                <th className="px-5 py-3 hidden md:table-cell">{t("dash_col_payer")}</th>
                 <th className="px-5 py-3">{t("dash_col_token")}</th>
                 <th className="px-5 py-3">{t("dash_amount")}</th>
                 <th className="px-5 py-3">{t("dash_status_col")}</th>
                 <th className="px-5 py-3 hidden sm:table-cell">{t("dash_time")}</th>
+                <th className="px-5 py-3 hidden lg:table-cell">{t("dash_col_tx_hash")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1E293B]/60">
               {receiptsLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-zinc-600 animate-pulse">
+                  <td colSpan={7} className="px-5 py-8 text-center text-zinc-600 animate-pulse">
                     {t("dash_loading")}
                   </td>
                 </tr>
@@ -564,6 +580,9 @@ export default function Dashboard() {
                     <td className="px-5 py-3.5 text-zinc-600 hidden sm:table-cell">
                       {new Date(receipt.createdAt).toLocaleString()}
                     </td>
+                    <td className="px-5 py-3.5 font-mono text-zinc-600 hidden lg:table-cell">
+                      {receipt.txHash ? formatAddress(receipt.txHash) : "--"}
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -576,13 +595,14 @@ export default function Dashboard() {
                         <span className="font-mono text-zinc-500 not-italic">#{r.id}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-zinc-600 hidden md:table-cell">{r.service}</td>
+                    <td className="px-5 py-3.5 text-zinc-600 font-mono hidden md:table-cell">{r.payer}</td>
                     <td className="px-5 py-3.5 text-zinc-600">{r.token}</td>
                     <td className="px-5 py-3.5 text-zinc-600">{r.amount}</td>
                     <td className="px-5 py-3.5">
                       <PillBadge label={t("dash_preview_label")} />
                     </td>
                     <td className="px-5 py-3.5 text-zinc-700 hidden sm:table-cell">--</td>
+                    <td className="px-5 py-3.5 text-zinc-700 font-mono hidden lg:table-cell">--</td>
                   </tr>
                 ))
               )}
