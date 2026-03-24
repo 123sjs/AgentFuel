@@ -559,7 +559,7 @@ export default function Market() {
           onChange={(v) => setStatusFilter(v as StatusFilter)}
           options={[
             { label: t("market_all_status"),      value: "all" },
-            { label: t("market_filter_active"),   value: "active" },
+            { label: t("market_active"),            value: "active" },
             { label: t("market_filter_inactive"), value: "inactive" },
           ]}
         />

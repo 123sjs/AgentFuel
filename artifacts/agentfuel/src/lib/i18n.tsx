@@ -258,14 +258,12 @@ export const translations = {
     market_explore_pricing: "Explore Pricing",
     market_all_tokens: "All Tokens",
     market_all_status: "All Status",
-    market_filter_active: "Active",
     market_filter_inactive: "Inactive",
     market_count_unit: "services",
 
     // Dashboard — extended
     dash_explore_services: "Explore Services",
     dash_inactive: "Inactive",
-    dash_coming_soon: "Coming soon",
     dash_testnet: "Testnet",
   },
 
@@ -517,14 +515,12 @@ export const translations = {
     market_explore_pricing: "查看定价",
     market_all_tokens: "全部代币",
     market_all_status: "全部状态",
-    market_filter_active: "运行中",
     market_filter_inactive: "已停用",
     market_count_unit: "个服务",
 
     // Dashboard — extended
     dash_explore_services: "探索服务",
     dash_inactive: "已停用",
-    dash_coming_soon: "即将上线",
     dash_testnet: "测试网",
   },
 } as const;

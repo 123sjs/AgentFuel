@@ -325,7 +325,7 @@ export default function Dashboard() {
             title="FUEL staking is not yet available"
           >
             {t("dash_stake_fuel")}
-            <PillBadge label={t("dash_coming_soon")} variant="soon" />
+            <PillBadge label={t("footer_coming_soon")} variant="soon" />
           </button>
         </div>
       </div>
@@ -426,12 +426,12 @@ export default function Dashboard() {
           <StatusRow
             label={t("dash_provider_tier")}
             value="--"
-            badge={<PillBadge label="Coming soon" variant="soon" />}
+            badge={<PillBadge label={t("footer_coming_soon")} variant="soon" />}
           />
           <StatusRow
             label={t("dash_verification")}
             value="--"
-            badge={<PillBadge label="Coming soon" variant="soon" />}
+            badge={<PillBadge label={t("footer_coming_soon")} variant="soon" />}
           />
           <StatusRow
             label={t("dash_registered")}
