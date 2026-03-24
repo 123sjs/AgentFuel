@@ -11,10 +11,14 @@ import { motion } from "framer-motion";
 import {
   ShieldCheck, Coins, CheckCircle2, AlertCircle,
   TrendingUp, Wallet, Database, Server, Activity,
-  ArrowRight, Info, ChevronRight,
+  ArrowRight, Info, ChevronRight, ExternalLink,
 } from "lucide-react";
 import { formatAddress } from "@/lib/utils";
 import { useLang } from "@/lib/i18n";
+
+/* ─── Constants ────────────────────────────────────────────────── */
+const FUEL_SHORT    = "0x3e9f…ffff";
+const FUEL_CONTRACT = "0x3e9fc4f2acf5d6f7815cb9f38b2c69576088ffff";
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
 /**
@@ -405,8 +409,18 @@ export default function Dashboard() {
           />
           <StatusRow
             label={t("dash_fuel_contract")}
-            value="--"
-            badge={<PillBadge label="Coming soon" variant="soon" />}
+            value={FUEL_SHORT}
+            badge={
+              <a
+                href={`https://testnet.bscscan.com/token/${FUEL_CONTRACT}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-300 transition-colors"
+                title="View on BSCScan Testnet"
+              >
+                <ExternalLink className="w-3 h-3 text-zinc-600" />
+              </a>
+            }
           />
           {/* Preview-only fields — clearly labeled */}
           <StatusRow

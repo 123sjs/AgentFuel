@@ -378,16 +378,16 @@ function ListServiceModal({
                 <FieldHint>Amount charged per API call.</FieldHint>
               </div>
 
-              {/* Currency — read-only, hardcoded USDT */}
+              {/* Currency — read-only, FUEL testnet token */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-zinc-400">
                   Payment Token
                 </label>
                 <div className={`${inputClass} flex items-center gap-2 cursor-default opacity-70`}>
                   <Lock className="w-3 h-3 text-zinc-600 shrink-0" />
-                  <span className="text-zinc-400">USDT</span>
+                  <span className="text-zinc-400">FUEL</span>
                 </div>
-                <FieldHint>Current default payment token.</FieldHint>
+                <FieldHint>BSC Testnet FUEL token used for testing.</FieldHint>
               </div>
             </div>
 
@@ -469,7 +469,7 @@ export default function Market() {
         description:  fd.get("description")   as string,
         endpoint:     fd.get("endpoint")      as string,
         price:        fd.get("price")         as string,
-        currency:     "USDT",
+        currency:     "FUEL",
         stakeRequired: fd.get("stakeRequired") as string,
       },
     });
