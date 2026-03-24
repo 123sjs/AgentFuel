@@ -258,6 +258,7 @@ function ListServiceModal({
   t: (k: any) => string;
 }) {
   const { lang } = useLang();
+  const { isConnected, isCorrectNetwork } = useWallet();
 
   const inputClass =
     "w-full px-3.5 py-2.5 bg-[#06070A] border border-[#1E293B] rounded-xl text-white text-sm focus:ring-1 focus:ring-[#F3BA2F]/40 focus:border-[#F3BA2F]/40 outline-none transition-all placeholder:text-zinc-600";
@@ -314,6 +315,14 @@ function ListServiceModal({
                   : "Listing creates a registry entry. Onchain settlement and automatic FUEL staking are being integrated — submitting is not a deployment to BSC."}
               </p>
             </div>
+
+            {/* ── Network notice (shown immediately when network is wrong) ── */}
+            {isConnected && !isCorrectNetwork && (
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/5">
+                <AlertCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-yellow-300 leading-relaxed">{t("mkt_network_notice")}</p>
+              </div>
+            )}
 
             {/* ── Basic Info ── */}
             <SectionLabel>Basic Info</SectionLabel>

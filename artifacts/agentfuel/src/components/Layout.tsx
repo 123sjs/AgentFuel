@@ -8,7 +8,7 @@ import logoSrc from "@assets/ChatGPT_Image_2026年3月22日_19_49_35_17741806528
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
+  const { address, isConnected, isConnecting, isCorrectNetwork, networkName, connect, disconnect } = useWallet();
   const { lang, t, toggle } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -95,8 +95,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onClick={disconnect}
                 className="px-3 py-1.5 rounded-md border border-[#1E293B] bg-white/3 text-sm text-zinc-300 hover:text-white hover:bg-white/6 transition-all flex items-center gap-2"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400 af-breathe" />
+                <div className={`w-1.5 h-1.5 rounded-full af-breathe ${isCorrectNetwork ? "bg-green-400" : "bg-yellow-400"}`} />
                 {formatAddress(address!)}
+                {!isCorrectNetwork && (
+                  <span className="text-yellow-400/80 text-[11px]">· {networkName}</span>
+                )}
               </button>
             ) : (
               <button
@@ -168,9 +171,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {isConnected ? (
               <button
                 onClick={() => { disconnect(); setMobileMenuOpen(false); }}
-                className="w-full py-3.5 rounded-xl border border-[#1E293B] text-white font-medium"
+                className="w-full py-3.5 rounded-xl border border-[#1E293B] text-white font-medium flex items-center justify-center gap-2"
               >
-                {t("disconnect")} ({formatAddress(address!)})
+                <div className={`w-1.5 h-1.5 rounded-full ${isCorrectNetwork ? "bg-green-400" : "bg-yellow-400"}`} />
+                {isCorrectNetwork
+                  ? `${t("disconnect")} (${formatAddress(address!)})`
+                  : `${t("net_wrong_network")} · ${t("disconnect")}`}
               </button>
             ) : (
               <button

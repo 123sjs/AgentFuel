@@ -153,7 +153,7 @@ function RegistrationView({
 
 /* ─── Main Dashboard ─────────────────────────────────────────────── */
 export default function Dashboard() {
-  const { address, isConnected, connect } = useWallet();
+  const { address, isConnected, isCorrectNetwork, networkName, connect } = useWallet();
   const { t } = useLang();
 
   const { data: providers, isLoading: providersLoading } = useListProviders();
@@ -311,6 +311,16 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* ── Network mismatch banner ──────────────────────────────── */}
+      {isConnected && !isCorrectNetwork && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/5 text-xs text-yellow-300">
+          <Info className="w-3.5 h-3.5 shrink-0 text-yellow-400" />
+          <span>
+            {`${t("net_banner_prefix")} ${networkName} ${t("net_banner_suffix")}`}
+          </span>
+        </div>
+      )}
 
       {/* ── Stat cards ───────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

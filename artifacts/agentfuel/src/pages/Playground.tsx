@@ -116,7 +116,7 @@ export default function Playground() {
 
   const { data: services, isLoading: servicesLoading } = useListServices();
   const { mutate: requestQuote, isPending, data: quoteResult, error, reset } = useRequestQuote();
-  const { isConnected, connect } = useWallet();
+  const { isConnected, isCorrectNetwork, connect } = useWallet();
   const { t } = useLang();
 
   /* Resolve selected service from real data */
@@ -317,6 +317,24 @@ export default function Playground() {
                   className="px-5 py-2 bg-[#F3BA2F] text-[#06070A] font-bold text-sm rounded-xl hover:bg-[#F3BA2F]/90 transition-colors"
                 >
                   {t("connect_wallet")}
+                </button>
+              </div>
+            ) : isConnected && !isCorrectNetwork ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5">
+                  <AlertCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-yellow-300 leading-relaxed">{t("play_wrong_network_notice")}</p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isPending || !serviceId}
+                  className="w-full py-3 bg-[#F3BA2F] text-[#06070A] font-bold text-sm rounded-xl hover:bg-[#F3BA2F]/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> {t("play_submitting")}</>
+                  ) : (
+                    <><Send className="w-4 h-4" /> {t("play_submit")}</>
+                  )}
                 </button>
               </div>
             ) : (

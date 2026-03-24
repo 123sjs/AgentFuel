@@ -198,6 +198,13 @@ export const translations = {
     play_err_invalid: "Invalid request — serviceId is required and must be a numeric ID.",
     play_err_not_found: "Service not found — it may have been removed from the registry.",
     play_err_inactive: "This service is not currently accepting quotes.",
+
+    // Network state
+    net_wrong_network: "Wrong network",
+    net_banner_prefix: "Current network:",
+    net_banner_suffix: "· Switch to BSC Testnet to use on-chain features",
+    mkt_network_notice: "Network is not BSC Testnet. On-chain features unavailable. Form submission still works.",
+    play_wrong_network_notice: "Wallet connected, but network is not BSC Testnet. Quotes can still be requested. On-chain execution is unavailable.",
   },
 
   zh: {
@@ -388,6 +395,13 @@ export const translations = {
     play_err_invalid: "请求无效 — serviceId 必须为数字格式的服务 ID。",
     play_err_not_found: "服务不存在 — 该服务可能已从注册表中移除。",
     play_err_inactive: "该服务当前不接受报价请求。",
+
+    // Network state
+    net_wrong_network: "网络不匹配",
+    net_banner_prefix: "当前网络：",
+    net_banner_suffix: "· 请切换到 BSC Testnet 以使用链上相关功能",
+    mkt_network_notice: "当前网络非 BSC Testnet，链上功能暂不可用。表单信息仍可提交。",
+    play_wrong_network_notice: "已连接钱包，但当前网络非 BSC Testnet。Quote 请求可继续，链上执行功能暂不可用。",
   },
 } as const;
 
